@@ -124,6 +124,23 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                 if (id) stageIds.add(id);
             }
 
+            // Build reverse lookup: pipelineId -> dev environmentId
+            // Handles the case where the relationship is stored on the environment record
+            // rather than as a direct lookup on the pipeline record.
+            const pipelineToDevEnvId = new Map<string, string>();
+            for (const raw of rawEnvironments) {
+                const envId = getEntityPrimaryKey(raw, 'deploymentenvironment');
+                if (!envId) continue;
+                const usedKeys = new Set<string>();
+                for (const [k, v] of Object.entries(raw)) {
+                    if (v === envId) usedKeys.add(k);
+                }
+                const pipelineRef = findFirstGuidMatch(raw, pipelineIds, usedKeys);
+                if (pipelineRef) {
+                    pipelineToDevEnvId.set(pipelineRef.value, envId);
+                }
+            }
+
             // Process stages: link to pipeline, environment, and previous stage via GUID matching
             const stageMap = new Map<string, DeploymentStage>();
             for (const raw of rawStages) {
@@ -170,6 +187,8 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                 }
 
                 const devEnvMatch = findFirstGuidMatch(raw, envIds, usedKeys);
+                // Fall back to reverse lookup if no direct field found on the pipeline record
+                const devEnvId = devEnvMatch?.value ?? pipelineToDevEnvId.get(id);
 
                 const pipelineStages = [...stageMap.values()].filter(s => s.pipelineId === id);
                 const orderedStages = orderStages(pipelineStages);
@@ -177,7 +196,7 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                 result.push({
                     id,
                     name: raw.name ?? raw.pipelinename ?? id,
-                    developmentEnvironment: devEnvMatch ? (envMap.get(devEnvMatch.value) ?? null) : null,
+                    developmentEnvironment: devEnvId ? (envMap.get(devEnvId) ?? null) : null,
                     stages: orderedStages,
                     rawAttributes: raw,
                 });
