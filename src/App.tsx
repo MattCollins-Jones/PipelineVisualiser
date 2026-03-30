@@ -1,32 +1,14 @@
-import { useCallback, useEffect } from "react";
-import { ConnectionStatus } from "./components/ConnectionStatus";
-import { DataverseAPIDemo } from "./components/DataverseAPIDemo";
-import { EventLog } from "./components/EventLog";
-import { ToolboxAPIDemo } from "./components/ToolboxAPIDemo";
-import { useConnection, useEventLog, useToolboxEvents } from "./hooks/useToolboxAPI";
+import { useCallback } from "react";
+import { PipelineVisualiser } from "./components/PipelineVisualiser";
+import { useConnection, useToolboxEvents } from "./hooks/useToolboxAPI";
 
 function App() {
-    const { connection, isLoading, refreshConnection } = useConnection();
-    const { logs, addLog, clearLogs  } = useEventLog();
+    const { connection, refreshConnection } = useConnection();
 
-    // Handle platform events
     const handleEvent = useCallback(
-        (event: string, _data: any) => {
-            switch (event) {
-                case 'connection:updated':
-                case 'connection:created':
-                    refreshConnection();
-                    break;
-
-                case 'connection:deleted':
-                    refreshConnection();
-                    break;
-
-                case 'terminal:output':
-                case 'terminal:command:completed':
-                case 'terminal:error':
-                    // Terminal events handled by dedicated components
-                    break;
+        (event: string) => {
+            if (['connection:updated', 'connection:created', 'connection:deleted'].includes(event)) {
+                refreshConnection();
             }
         },
         [refreshConnection]
@@ -34,25 +16,14 @@ function App() {
 
     useToolboxEvents(handleEvent);
 
-    // Add initial log (run only once on mount)
-    useEffect(() => {
-        addLog('React Sample Tool initialized', 'success');
-    }, [addLog]);
-
     return (
         <>
             <header className="header">
-                <h1>⚛️ React Sample Tool</h1>
-                <p className="subtitle">A complete example of building Power Platform Tool Box tools with React & TypeScript</p>
+                <h1>🚀 Pipeline Visualiser</h1>
+                <p className="subtitle">Visualise deployment pipelines across environments</p>
             </header>
 
-            <ConnectionStatus connection={connection} isLoading={isLoading} />
- 
-            <ToolboxAPIDemo onLog={addLog} />
-
-            <DataverseAPIDemo connection={connection} onLog={addLog} />
-
-            <EventLog logs={logs} onClear={clearLogs} />
+            <PipelineVisualiser connection={connection} />
         </>
     );
 }

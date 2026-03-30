@@ -1,34 +1,43 @@
 # Pipeline Visualiser
 
-A tool to help visualise pipelines across environments.
+A Power Platform ToolBox tool that visualises deployment pipelines across environments.
 
 ## Features
 
-- ✅ React 18 with TypeScript
-- ✅ Vite for fast development and building
-- ✅ Access to ToolBox API via `window.toolboxAPI`
-- ✅ Connection URL and access token handling
-- ✅ Event subscription and handling
-- ✅ Hot Module Replacement (HMR) for development
+- Queries deployment pipeline data directly from Dataverse
+- Displays each pipeline as a visual flow: **Dev Environment → Stage 1 → Stage 2 → ...**
+- Colour-coded nodes — blue for Development, purple for Target environments
+- Shared environment detection — environments appearing across multiple pipelines receive a unique accent colour so intersections are immediately visible
+- Hover tooltips on each environment node showing how many pipelines it belongs to
+- Automatically refreshes when the active connection changes
 
 ## Structure
 
 ```
-pptb-pipeline-visualiser/
-├── src/
-│   ├── App.tsx         # Main component
-│   ├── main.tsx        # Entry point
-│   └── styles.css      # Styling
-├── dist/               # Build output
-├── index.html
-├── package.json
-├── tsconfig.json
-└── vite.config.ts
+src/
+├── components/
+│   ├── PipelineFlow.tsx        # Renders a single pipeline as a horizontal flow
+│   └── PipelineVisualiser.tsx  # Top-level component with loading/error states
+├── hooks/
+│   ├── usePipelineData.ts      # Dataverse queries and data processing
+│   └── useToolboxAPI.ts        # Connection and event hooks
+├── types/
+│   └── pipeline.ts             # TypeScript interfaces
+├── App.tsx
+├── index.css
+└── main.tsx
 ```
 
-## Installation
+## Dataverse Tables
 
-Install dependencies:
+| Table | Purpose |
+|---|---|
+| `deploymentpipeline` | Parent pipeline record |
+| `deploymentstage` | Links environments to a pipeline; self-referential for ordering |
+| `deploymentenvironment` | Environment records (name, type, ID) |
+| `deploymentpipeline_deploymentenvironment` | N:N intersect — links pipelines to their dev environment |
+
+## Installation
 
 ```bash
 npm install
@@ -36,61 +45,19 @@ npm install
 
 ## Development
 
-Start development server with HMR:
-
 ```bash
 npm run dev
 ```
 
-Build the tool:
+## Build
 
 ```bash
 npm run build
 ```
 
-Preview production build:
-
-```bash
-npm run preview
-```
-
-## Usage in ToolBox
-
-1. Build the tool using `npm run build`
-2. Install the tool in ToolBox
-3. Load and use the tool from the ToolBox interface
-
-## API Usage
-
-The tool demonstrates various ToolBox API features:
-
-### Getting Connection Context
-
-```typescript
-const context = await window.toolboxAPI.getToolContext();
-console.log(context.connectionUrl);
-console.log(context.accessToken);
-```
-
-### Showing Notifications
-
-```typescript
-await window.toolboxAPI.showNotification({
-  title: 'Success',
-  body: 'Operation completed',
-  type: 'success'
-});
-```
-
-### Subscribing to Events
-
-```typescript
-window.toolboxAPI.onToolboxEvent((event, payload) => {
-  console.log('Event:', payload.event);
-  console.log('Data:', payload.data);
-});
-```
+The `dist/` folder can then be installed as a tool in Power Platform ToolBox.
 
 ## License
 
 MIT
+
