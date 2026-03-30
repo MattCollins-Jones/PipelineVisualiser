@@ -40,15 +40,18 @@ function findFirstGuidMatch(
 /**
  * Orders stages by following the self-referential previousStageId chain.
  * Stage with no previousStageId is first; each subsequent stage points to the previous.
+ * Handles duplicate previousStageId references gracefully by keeping the first seen.
  */
 function orderStages(stages: DeploymentStage[]): DeploymentStage[] {
     if (stages.length <= 1) return stages;
 
-    // Build map: previousStageId -> the stage that follows it
-    const afterMap = new Map<string, DeploymentStage>();
+    // Build map: previousStageId -> stages that follow it (array to handle duplicates)
+    const afterMap = new Map<string, DeploymentStage[]>();
     for (const stage of stages) {
         if (stage.previousStageId) {
-            afterMap.set(stage.previousStageId, stage);
+            const existing = afterMap.get(stage.previousStageId) ?? [];
+            existing.push(stage);
+            afterMap.set(stage.previousStageId, existing);
         }
     }
 
@@ -62,7 +65,8 @@ function orderStages(stages: DeploymentStage[]): DeploymentStage[] {
     while (current && !visited.has(current.id)) {
         ordered.push(current);
         visited.add(current.id);
-        current = afterMap.get(current.id);
+        // If multiple stages claim the same previous stage, take the first one
+        current = afterMap.get(current.id)?.[0];
     }
 
     // Append any stages not reached via the chain (data integrity fallback)
@@ -150,6 +154,12 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                 if (id) stageIds.add(id);
             }
 
+            // Pre-build envIds set once to avoid re-allocating it for every stage
+            const envIds = new Set(envMap.keys());
+
+            // Pre-group stages by pipelineId to avoid O(pipelines × stages) filtering later
+            const stagesByPipeline = new Map<string, DeploymentStage[]>();
+
             // Process stages: link to pipeline, environment, and previous stage via GUID matching
             const stageMap = new Map<string, DeploymentStage>();
             for (const raw of rawStages) {
@@ -165,21 +175,32 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                 const pipelineMatch = findFirstGuidMatch(raw, pipelineIds, usedKeys);
                 if (pipelineMatch) usedKeys.add(pipelineMatch.key);
 
-                const envMatch = findFirstGuidMatch(raw, new Set(envMap.keys()), usedKeys);
+                const envMatch = findFirstGuidMatch(raw, envIds, usedKeys);
                 if (envMatch) usedKeys.add(envMatch.key);
 
-                // Exclude own ID from self-referential matching
-                const otherStageIds = new Set([...stageIds].filter(sid => sid !== id));
-                const prevMatch = findFirstGuidMatch(raw, otherStageIds, usedKeys);
+                // Self-referential match: reuse stageIds but skip the current stage's own ID
+                const prevMatch = findFirstGuidMatch(
+                    raw,
+                    stageIds,
+                    new Set([...usedKeys, id])
+                );
 
-                stageMap.set(id, {
+                const stage: DeploymentStage = {
                     id,
                     name: raw.name ?? raw.stagename ?? `Stage ${stageMap.size + 1}`,
                     pipelineId: pipelineMatch?.value ?? '',
                     environment: envMatch ? (envMap.get(envMatch.value) ?? null) : null,
                     previousStageId: prevMatch?.value ?? null,
                     rawAttributes: raw,
-                });
+                };
+
+                stageMap.set(id, stage);
+
+                if (stage.pipelineId) {
+                    const group = stagesByPipeline.get(stage.pipelineId) ?? [];
+                    group.push(stage);
+                    stagesByPipeline.set(stage.pipelineId, group);
+                }
             }
 
             // Process pipelines: dev environment comes from aliased devenv.* fields
@@ -202,7 +223,7 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                     ? (envMap.get(devEnvId) ?? { id: devEnvId, name: devEnvName ?? devEnvId, rawAttributes: {} })
                     : null;
 
-                const pipelineStages = [...stageMap.values()].filter(s => s.pipelineId === id);
+                const pipelineStages = stagesByPipeline.get(id) ?? [];
                 const orderedStages = orderStages(pipelineStages);
 
                 result.push({
@@ -216,7 +237,8 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
 
             setPipelines(result);
         } catch (err) {
-            setError(`Failed to load pipeline data: ${(err as Error).message}`);
+            const message = err instanceof Error ? err.message : String(err);
+            setError(`Failed to load pipeline data: ${message}`);
         } finally {
             setIsLoading(false);
         }
