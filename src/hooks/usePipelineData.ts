@@ -79,6 +79,32 @@ async function fetchAll(entityName: string): Promise<Record<string, any>[]> {
     return result.value ?? [];
 }
 
+async function fetchPipelinesWithDevEnv(): Promise<Record<string, any>[]> {
+    const fetchXml = `
+<fetch>
+  <entity name="deploymentpipeline">
+    <all-attributes />
+    <link-entity name="deploymentpipeline_deploymentenvironment"
+                 intersect="true"
+                 visible="false"
+                 from="deploymentpipelineid"
+                 to="deploymentpipelineid"
+                 link-type="outer">
+      <link-entity name="deploymentenvironment"
+                   alias="devenv"
+                   from="deploymentenvironmentid"
+                   to="deploymentenvironmentid"
+                   link-type="outer">
+        <attribute name="deploymentenvironmentid" />
+        <attribute name="name" />
+      </link-entity>
+    </link-entity>
+  </entity>
+</fetch>`.trim();
+    const result = await window.dataverseAPI.fetchXmlQuery(fetchXml);
+    return result.value ?? [];
+}
+
 export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | null) {
     const [pipelines, setPipelines] = useState<DeploymentPipeline[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -91,7 +117,7 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
 
         try {
             const [rawPipelines, rawStages, rawEnvironments] = await Promise.all([
-                fetchAll('deploymentpipeline'),
+                fetchPipelinesWithDevEnv(),
                 fetchAll('deploymentstage'),
                 fetchAll('deploymentenvironment'),
             ]);
@@ -122,23 +148,6 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
             for (const raw of rawStages) {
                 const id = getEntityPrimaryKey(raw, 'deploymentstage');
                 if (id) stageIds.add(id);
-            }
-
-            // Build reverse lookup: pipelineId -> dev environmentId
-            // Handles the case where the relationship is stored on the environment record
-            // rather than as a direct lookup on the pipeline record.
-            const pipelineToDevEnvId = new Map<string, string>();
-            for (const raw of rawEnvironments) {
-                const envId = getEntityPrimaryKey(raw, 'deploymentenvironment');
-                if (!envId) continue;
-                const usedKeys = new Set<string>();
-                for (const [k, v] of Object.entries(raw)) {
-                    if (v === envId) usedKeys.add(k);
-                }
-                const pipelineRef = findFirstGuidMatch(raw, pipelineIds, usedKeys);
-                if (pipelineRef) {
-                    pipelineToDevEnvId.set(pipelineRef.value, envId);
-                }
             }
 
             // Process stages: link to pipeline, environment, and previous stage via GUID matching
@@ -173,8 +182,8 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                 });
             }
 
-            // Process pipelines: link to dev environment and attach ordered stages
-            const envIds = new Set(envMap.keys());
+            // Process pipelines: dev environment comes from aliased devenv.* fields
+            // returned by the intersect join in fetchPipelinesWithDevEnv()
             const result: DeploymentPipeline[] = [];
 
             for (const raw of rawPipelines) {
@@ -186,9 +195,12 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                     if (v === id) usedKeys.add(k);
                 }
 
-                const devEnvMatch = findFirstGuidMatch(raw, envIds, usedKeys);
-                // Fall back to reverse lookup if no direct field found on the pipeline record
-                const devEnvId = devEnvMatch?.value ?? pipelineToDevEnvId.get(id);
+                // Dev environment is returned via the intersect link-entity alias
+                const devEnvId: string | undefined = raw['devenv.deploymentenvironmentid'];
+                const devEnvName: string | undefined = raw['devenv.name'];
+                const devEnv: DeploymentEnvironment | null = devEnvId
+                    ? (envMap.get(devEnvId) ?? { id: devEnvId, name: devEnvName ?? devEnvId, rawAttributes: {} })
+                    : null;
 
                 const pipelineStages = [...stageMap.values()].filter(s => s.pipelineId === id);
                 const orderedStages = orderStages(pipelineStages);
@@ -196,7 +208,7 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                 result.push({
                     id,
                     name: raw.name ?? raw.pipelinename ?? id,
-                    developmentEnvironment: devEnvId ? (envMap.get(devEnvId) ?? null) : null,
+                    developmentEnvironment: devEnv,
                     stages: orderedStages,
                     rawAttributes: raw,
                 });
