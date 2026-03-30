@@ -53,7 +53,7 @@ export const ToolboxAPIDemo: React.FC<ToolboxAPIDemoProps> = ({ onLog }) => {
                 message: 'Export from React Sample Tool',
             };
 
-            const filePath = await window.toolboxAPI.utils.saveFile('react-export.json', JSON.stringify(data, null, 2));
+            const filePath = await (window.toolboxAPI.utils as any).saveFile('react-export.json', JSON.stringify(data, null, 2));
 
             if (filePath) {
                 await showNotification('File Saved', `File saved to: ${filePath}`, 'success');

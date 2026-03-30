@@ -360,3 +360,132 @@ body {
 .log::-webkit-scrollbar-thumb:hover {
     background: #5568d3;
 }
+
+/* ─── Pipeline Visualiser ─────────────────────────────────────────────────── */
+
+.visualiser-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.visualiser-header h2 {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.pipeline-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    background: #fafafa;
+}
+
+.pipeline-card__name {
+    color: #333;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+.pipeline-flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+}
+
+.pipeline-arrow {
+    color: #667eea;
+    font-size: 1.4rem;
+    font-weight: bold;
+    flex-shrink: 0;
+    line-height: 1;
+    user-select: none;
+}
+
+.pipeline-node {
+    flex-shrink: 0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    min-width: 130px;
+    max-width: 200px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.pipeline-node--dev {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border: 2px solid #0078d4;
+}
+
+.pipeline-node--target {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    border: 2px solid #7b1fa2;
+}
+
+.pipeline-node__stage-label {
+    font-size: 0.7rem;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.pipeline-node__env-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 6px;
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+.pipeline-node__badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge--dev {
+    background: #0078d4;
+    color: white;
+}
+
+.badge--target {
+    background: #7b1fa2;
+    color: white;
+}
+
+.pipeline-empty {
+    color: #999;
+    font-style: italic;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+    .pipeline-flow {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .pipeline-arrow {
+        transform: rotate(90deg);
+        align-self: center;
+    }
+
+    .pipeline-node {
+        max-width: 100%;
+        width: 100%;
+    }
+}

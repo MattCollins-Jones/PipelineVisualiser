@@ -156,11 +156,12 @@ export const DataverseAPIDemo: React.FC<DataverseAPIDemoProps> = ({ connection, 
             output += `Logical Name: ${metadata.LogicalName}\n`;
             output += `Metadata ID: ${metadata.MetadataId}\n`;
             output += `Display Name: ${metadata.DisplayName?.LocalizedLabels?.[0]?.Label || 'N/A'}\n`;
-            output += `Attributes: ${metadata.Attributes?.length || 0}\n`;
+            const attrs = (metadata as any).Attributes;
+            output += `Attributes: ${attrs?.length || 0}\n`;
 
-            if (metadata.Attributes && metadata.Attributes.length > 0) {
+            if (attrs && attrs.length > 0) {
                 output += '\nSample Attributes:\n';
-                metadata.Attributes.slice(0, 5).forEach((attr: any) => {
+                attrs.slice(0, 5).forEach((attr: any) => {
                     output += `  - ${attr.LogicalName} (${attr.AttributeType})\n`;
                 });
             }
