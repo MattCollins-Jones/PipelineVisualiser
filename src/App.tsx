@@ -1,10 +1,9 @@
 import { useCallback } from "react";
-import { ConnectionStatus } from "./components/ConnectionStatus";
 import { PipelineVisualiser } from "./components/PipelineVisualiser";
 import { useConnection, useToolboxEvents } from "./hooks/useToolboxAPI";
 
 function App() {
-    const { connection, isLoading, refreshConnection } = useConnection();
+    const { connection, refreshConnection } = useConnection();
 
     const handleEvent = useCallback(
         (event: string) => {
@@ -23,8 +22,6 @@ function App() {
                 <h1>🚀 Pipeline Visualiser</h1>
                 <p className="subtitle">Visualise deployment pipelines across environments</p>
             </header>
-
-            <ConnectionStatus connection={connection} isLoading={isLoading} />
 
             <PipelineVisualiser connection={connection} />
         </>
