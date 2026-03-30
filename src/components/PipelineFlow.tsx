@@ -7,17 +7,29 @@ interface EnvironmentNodeProps {
     stageName?: string;
     isDevelopment?: boolean;
     sharedColor?: string;
+    pipelineCount?: number;
 }
 
-const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({ envName, stageName, isDevelopment, sharedColor }) => {
+const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
+    envName,
+    stageName,
+    isDevelopment,
+    sharedColor,
+    pipelineCount = 1,
+}) => {
     const sharedStyle: React.CSSProperties = sharedColor
         ? { borderColor: sharedColor, boxShadow: `0 0 0 3px ${sharedColor}55` }
         : {};
+
+    const tooltip = pipelineCount > 1
+        ? `${envName} is part of ${pipelineCount} pipelines`
+        : envName;
 
     return (
         <div
             className={`pipeline-node ${isDevelopment ? 'pipeline-node--dev' : 'pipeline-node--target'}`}
             style={sharedStyle}
+            data-tooltip={tooltip}
         >
             {stageName && <div className="pipeline-node__stage-label">{stageName}</div>}
             <div className="pipeline-node__env-name">{envName}</div>
@@ -31,9 +43,10 @@ const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({ envName, stageName, i
 interface PipelineFlowProps {
     pipeline: DeploymentPipeline;
     sharedColors: Map<string, string>;
+    envPipelineCount: Map<string, number>;
 }
 
-export const PipelineFlow: React.FC<PipelineFlowProps> = ({ pipeline, sharedColors }) => {
+export const PipelineFlow: React.FC<PipelineFlowProps> = ({ pipeline, sharedColors, envPipelineCount }) => {
     const hasNodes = pipeline.developmentEnvironment || pipeline.stages.length > 0;
 
     return (
@@ -47,6 +60,7 @@ export const PipelineFlow: React.FC<PipelineFlowProps> = ({ pipeline, sharedColo
                             envName={pipeline.developmentEnvironment.name}
                             isDevelopment
                             sharedColor={sharedColors.get(pipeline.developmentEnvironment.id)}
+                            pipelineCount={envPipelineCount.get(pipeline.developmentEnvironment.id)}
                         />
                         {pipeline.stages.length > 0 && (
                             <div className="pipeline-arrow" aria-hidden="true">→</div>
@@ -61,6 +75,7 @@ export const PipelineFlow: React.FC<PipelineFlowProps> = ({ pipeline, sharedColo
                             envName={stage.environment?.name ?? 'Unknown Environment'}
                             stageName={stage.name}
                             sharedColor={stage.environment ? sharedColors.get(stage.environment.id) : undefined}
+                            pipelineCount={stage.environment ? envPipelineCount.get(stage.environment.id) : undefined}
                         />
                         {index < pipeline.stages.length - 1 && (
                             <div className="pipeline-arrow" aria-hidden="true">→</div>

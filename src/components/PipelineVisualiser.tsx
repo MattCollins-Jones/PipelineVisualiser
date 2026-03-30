@@ -2,12 +2,12 @@ import React, { useMemo } from 'react';
 import { usePipelineData } from '../hooks/usePipelineData';
 import { PipelineFlow } from './PipelineFlow';
 
-// Distinct accent colours for shared environments
-const SHARED_ENV_COLORS = [
-    '#e67e22', '#27ae60', '#e74c3c', '#f39c12',
-    '#1abc9c', '#d35400', '#16a085', '#c0392b',
-    '#2980b9', '#8e44ad',
-];
+// Golden angle (~137.5°) spacing gives maximum perceptual separation
+// between consecutive colours — works for any number of environments.
+function getSharedEnvColor(index: number): string {
+    const hue = Math.round((index * 137.508) % 360);
+    return `hsl(${hue}, 60%, 42%)`;
+}
 
 interface PipelineVisualiserProps {
     connection: ToolBoxAPI.DataverseConnection | null;
@@ -16,10 +16,9 @@ interface PipelineVisualiserProps {
 export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connection }) => {
     const { pipelines, isLoading, error, refresh } = usePipelineData(connection);
 
-    // Build a colour map: environments appearing in more than one pipeline
-    // get a unique accent colour so they're visually linkable across rows.
-    const sharedColors = useMemo(() => {
-        const usageCount = new Map<string, number>();
+    // Count how many pipelines each environment appears in
+    const envPipelineCount = useMemo(() => {
+        const count = new Map<string, number>();
         for (const pipeline of pipelines) {
             const envIds = new Set<string>();
             if (pipeline.developmentEnvironment?.id) envIds.add(pipeline.developmentEnvironment.id);
@@ -27,19 +26,23 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
                 if (stage.environment?.id) envIds.add(stage.environment.id);
             }
             for (const id of envIds) {
-                usageCount.set(id, (usageCount.get(id) ?? 0) + 1);
+                count.set(id, (count.get(id) ?? 0) + 1);
             }
         }
+        return count;
+    }, [pipelines]);
+
+    // Assign a unique accent colour to environments shared across 2+ pipelines
+    const sharedColors = useMemo(() => {
         const colors = new Map<string, string>();
         let colorIdx = 0;
-        for (const [id, count] of usageCount) {
+        for (const [id, count] of envPipelineCount) {
             if (count > 1) {
-                colors.set(id, SHARED_ENV_COLORS[colorIdx % SHARED_ENV_COLORS.length]);
-                colorIdx++;
+                colors.set(id, getSharedEnvColor(colorIdx++));
             }
         }
         return colors;
-    }, [pipelines]);
+    }, [envPipelineCount]);
 
     const hasShared = sharedColors.size > 0;
 
@@ -87,7 +90,12 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
             )}
 
             {pipelines.map(pipeline => (
-                <PipelineFlow key={pipeline.id} pipeline={pipeline} sharedColors={sharedColors} />
+                <PipelineFlow
+                    key={pipeline.id}
+                    pipeline={pipeline}
+                    sharedColors={sharedColors}
+                    envPipelineCount={envPipelineCount}
+                />
             ))}
         </div>
     );
