@@ -5,12 +5,7 @@
     "description": "A tool to help visualise pipelines across environments.",
     "main": "index.html",
     "icon": "MCJ-Logo.svg",
-    "contributors": [
-        {
-            "name": "Matt Collins-Jones",
-            "url": "https://www.collinsjones.co.uk"
-        }
-    ],
+    "author": "Matt Collins-Jones",
     "license": "MIT",
     "engines": {
         "node": ">=18.0.0"
