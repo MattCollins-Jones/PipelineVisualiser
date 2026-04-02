@@ -4,7 +4,13 @@
     "displayName": "Pipeline Visualiser",
     "description": "A tool to help visualise pipelines across environments.",
     "main": "index.html",
-    "author": "Power Platform ToolBox",
+    "icon": "MCJ-Logo.svg",
+    "contributors": [
+    {
+      "name": "Matt Collins-Jones",
+      "url": "https://www.collinsjones.co.uk"
+    }
+  ],
     "license": "MIT",
     "engines": {
         "node": ">=18.0.0"
