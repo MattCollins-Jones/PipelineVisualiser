@@ -6,11 +6,11 @@
     "main": "index.html",
     "icon": "MCJ-Logo.svg",
     "contributors": [
-    {
-      "name": "Matt Collins-Jones",
-      "url": "https://www.collinsjones.co.uk"
-    }
-  ],
+        {
+            "name": "Matt Collins-Jones",
+            "url": "https://www.collinsjones.co.uk"
+        }
+    ],
     "license": "MIT",
     "engines": {
         "node": ">=18.0.0"
@@ -36,6 +36,7 @@
     },
     "files": [
         "dist",
+        "MCJ-Logo.svg",
         "npm-shrinkwrap.json"
     ]
 }
