@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+
+  <!-- Perfect 90° arcs with flat ends -->
+  <g fill="none" stroke-linecap="butt" stroke-width="20">
+
+    <!-- Purple -->
+       <path d="M292.3 80.1
+                         A220 220 0 0 0 80.1 292.3"
+          stroke="#912a8a"/>
+
+    <!-- Blue -->
+       <path d="M80.1 307.7
+           A220 220 0 0 0 292.3 519.9"
+          stroke="#537ec2"/>
+
+    <!-- Yellow -->
+       <path d="M307.7 519.9
+           A220 220 0 0 0 519.9 307.7"
+          stroke="#fab800"/>
+
+    <!-- Green -->
+     <path d="M519.9 292.3
+           A220 220 0 0 0 307.7 80.1"
+          stroke="#32a57b"/>
+  </g>
+
+  <!-- MCJ text -->
+  <text x="50%" y="46%" text-anchor="middle"
+        font-family="Century Schoolbook, Century Schoolbook L, serif"
+        font-size="130" font-weight="700" fill="#000">
+    MCJ
+  </text>
+
+  <!-- URL text -->
+  <text x="50%" y="60%" text-anchor="middle"
+        font-family="Century Schoolbook, Century Schoolbook L, serif"
+        font-size="32" font-weight="700" fill="#000">
+    MattCollinsJones.co.uk
+  </text>
+
+</svg>

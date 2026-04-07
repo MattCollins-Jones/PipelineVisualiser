@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Plugin to fix HTML for PPTB compatibility
@@ -41,9 +43,35 @@ function fixHtmlForPPTB(): Plugin {
     };
 }
 
+/**
+ * Plugin to copy package.json and the icon into dist/ after build so
+ * ToolBox can read the tool metadata (name, version, icon, contributors)
+ * from the installed dist folder.
+ */
+function copyToolboxMetadata(): Plugin {
+    return {
+        name: 'copy-toolbox-metadata',
+        closeBundle() {
+            const outDir = path.resolve(__dirname, 'dist');
+
+            // Copy package.json
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+            fs.writeFileSync(
+                path.join(outDir, 'package.json'),
+                JSON.stringify(pkg, null, 4)
+            );
+
+            // Copy icon if it exists
+            if (pkg.icon && fs.existsSync(pkg.icon)) {
+                fs.copyFileSync(pkg.icon, path.join(outDir, pkg.icon));
+            }
+        },
+    };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
-    plugins: [react(), fixHtmlForPPTB()],
+    plugins: [react(), fixHtmlForPPTB(), copyToolboxMetadata()],
     base: './',
     build: {
         outDir: 'dist',
