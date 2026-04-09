@@ -10,8 +10,6 @@ interface TooltipState {
 
 // ─── Deployment run status helpers ───────────────────────────────────────────
 
-const TERMINAL_STATUSES = new Set([200000002, 200000003, 200000004]);
-
 function getRunStatusColor(status: number | null): string {
     if (status === 200000002) return '#22c55e'; // Succeeded
     if (status === 200000003) return '#ef4444'; // Failed
@@ -72,8 +70,8 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
 
     if (runs.length === 0) return null;
 
-    // Most recent terminal-status run for the summary line; fall back to newest run
-    const lastRun = runs.find(r => TERMINAL_STATUSES.has(r.status ?? -1)) ?? runs[0];
+    // Always show the most recent run in the summary regardless of status
+    const lastRun = runs[0];
     const statusColor = getRunStatusColor(lastRun.status);
     const dateStr = formatRunDate(lastRun.endTime ?? lastRun.startTime);
 
