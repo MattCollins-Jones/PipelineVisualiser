@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { DeploymentEnvironment, DeploymentStage, DeploymentPipeline } from '../types/pipeline';
+import type { DeploymentEnvironment, DeploymentStage, DeploymentPipeline, DeploymentStageRun } from '../types/pipeline';
 
 const isGuid = (val: unknown): val is string =>
     typeof val === 'string' &&
@@ -83,6 +83,19 @@ async function fetchAll(entityName: string): Promise<Record<string, any>[]> {
     return result.value ?? [];
 }
 
+/** Fetch the most recent 200 stage runs — enough to cover last 5 per pipeline for any reasonable number of pipelines. */
+async function fetchRecentStageRuns(): Promise<Record<string, any>[]> {
+    const fetchXml = `
+<fetch top="200">
+  <entity name="deploymentstagerun">
+    <all-attributes />
+    <order attribute="createdon" descending="true" />
+  </entity>
+</fetch>`.trim();
+    const result = await window.dataverseAPI.fetchXmlQuery(fetchXml);
+    return result.value ?? [];
+}
+
 async function fetchPipelinesWithDevEnv(): Promise<Record<string, any>[]> {
     const fetchXml = `
 <fetch>
@@ -120,10 +133,11 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
         setError(null);
 
         try {
-            const [rawPipelines, rawStages, rawEnvironments] = await Promise.all([
+            const [rawPipelines, rawStages, rawEnvironments, rawStageRuns] = await Promise.all([
                 fetchPipelinesWithDevEnv(),
                 fetchAll('deploymentstage'),
                 fetchAll('deploymentenvironment'),
+                fetchRecentStageRuns(),
             ]);
 
             // Build environment map: id -> DeploymentEnvironment
@@ -203,6 +217,41 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                 }
             }
 
+            // Process stage runs: link to pipeline via stageMap, group last 5 per pipeline
+            // rawStageRuns is already ordered newest-first from the FetchXML
+            const runsByPipeline = new Map<string, DeploymentStageRun[]>();
+            for (const raw of rawStageRuns) {
+                const id = getEntityPrimaryKey(raw, 'deploymentstagerun');
+                if (!id) continue;
+
+                const usedKeys = new Set<string>();
+                for (const [k, v] of Object.entries(raw)) {
+                    if (v === id) usedKeys.add(k);
+                }
+
+                // Find the stage this run belongs to via GUID matching
+                const stageMatch = findFirstGuidMatch(raw, stageIds, usedKeys);
+                const stageId = stageMatch?.value ?? null;
+                const pipelineId = stageId ? (stageMap.get(stageId)?.pipelineId ?? null) : null;
+                if (!pipelineId) continue;
+
+                const existing = runsByPipeline.get(pipelineId) ?? [];
+                if (existing.length >= 5) continue; // Already have 5 for this pipeline
+
+                existing.push({
+                    id,
+                    stageId,
+                    pipelineId,
+                    status: raw.stagerunstatus ?? null,
+                    artifactName: raw.artifactname ?? null,
+                    solutionVersion: raw.solutionartifactversion ?? null,
+                    startTime: raw.startedon ?? raw.createdon ?? null,
+                    endTime: raw.completedon ?? raw.modifiedon ?? null,
+                    rawAttributes: raw,
+                });
+                runsByPipeline.set(pipelineId, existing);
+            }
+
             // Process pipelines: dev environment comes from aliased devenv.* fields
             // returned by the intersect join in fetchPipelinesWithDevEnv()
             const result: DeploymentPipeline[] = [];
@@ -231,6 +280,7 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                     name: raw.name ?? raw.pipelinename ?? id,
                     developmentEnvironment: devEnv,
                     stages: orderedStages,
+                    recentRuns: runsByPipeline.get(id) ?? [],
                     rawAttributes: raw,
                 });
             }
