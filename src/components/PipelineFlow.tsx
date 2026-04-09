@@ -10,11 +10,20 @@ interface TooltipState {
 
 // ─── Deployment run status helpers ───────────────────────────────────────────
 
+/** Colour used for the dot indicators (decorative — not text). */
 function getRunStatusColor(status: number | null): string {
     if (status === 200000002) return '#22c55e'; // Succeeded
     if (status === 200000003) return '#ef4444'; // Failed
     if (status === 200000004) return '#eab308'; // Canceled
     return '#d1d5db'; // All other statuses
+}
+
+/** Colour used for the status label text — must meet WCAG AA contrast on white. */
+function getRunStatusTextColor(status: number | null): string {
+    if (status === 200000002) return '#16a34a'; // Succeeded — darker green (~5.1:1)
+    if (status === 200000003) return '#dc2626'; // Failed — darker red (~4.7:1)
+    if (status === 200000004) return '#b45309'; // Canceled — darker amber (~5.0:1)
+    return '#6b7280'; // All other statuses (~4.6:1)
 }
 
 function getRunStatusLabel(status: number | null): string {
@@ -70,9 +79,8 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
 
     if (runs.length === 0) return null;
 
-    // Always show the most recent run in the summary regardless of status
     const lastRun = runs[0];
-    const statusColor = getRunStatusColor(lastRun.status);
+    const statusTextColor = getRunStatusTextColor(lastRun.status);
     const dateStr = formatRunDate(lastRun.endTime ?? lastRun.startTime);
 
     return (
@@ -98,7 +106,7 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
                             {lastRun.solutionVersion && ` v${lastRun.solutionVersion}`}
                         </span>
                     )}
-                    <span className="deployment-summary__status" style={{ color: statusColor }}>
+                    <span className="deployment-summary__status" style={{ color: statusTextColor }}>
                         {getRunStatusLabel(lastRun.status)}
                     </span>
                     {dateStr && <span className="deployment-summary__date">{dateStr}</span>}
