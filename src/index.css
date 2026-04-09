@@ -498,6 +498,78 @@ body {
     margin-bottom: 8px;
 }
 
+/* ─── Legend & Notes (collapsible) ───────────────────────────────────────── */
+
+.pipeline-legend {
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    background: #fafafa;
+    font-size: 0.8rem;
+    color: #555;
+}
+
+.pipeline-legend__toggle {
+    cursor: pointer;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: #555;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    list-style: none;
+}
+
+.pipeline-legend__toggle::-webkit-details-marker {
+    display: none;
+}
+
+.pipeline-legend__toggle::before {
+    content: '▶';
+    font-size: 0.6rem;
+    transition: transform 0.15s ease;
+    color: #888;
+}
+
+.pipeline-legend[open] .pipeline-legend__toggle::before {
+    transform: rotate(90deg);
+}
+
+.pipeline-legend__body {
+    padding: 0 12px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-top: 1px solid #e8e8e8;
+}
+
+.pipeline-legend__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-top: 10px;
+}
+
+.pipeline-legend__label {
+    font-weight: 500;
+    color: #444;
+    white-space: nowrap;
+}
+
+.pipeline-legend__dots-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.pipeline-legend__item {
+    color: #555;
+    margin-right: 8px;
+}
+
 .pipeline-empty {
     color: #999;
     font-style: italic;

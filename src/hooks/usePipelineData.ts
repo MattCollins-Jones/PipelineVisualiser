@@ -83,13 +83,18 @@ async function fetchAll(entityName: string): Promise<Record<string, any>[]> {
     return result.value ?? [];
 }
 
-/** Fetch the most recent 200 stage runs — enough to cover last 5 per pipeline for any reasonable number of pipelines. */
+/** Fetch the most recent 500 stage runs, joined to deploymentstage (inner join ensures
+ *  orphaned runs — i.e. those whose stage was deleted — are never returned). */
 async function fetchRecentStageRuns(): Promise<Record<string, any>[]> {
     const fetchXml = `
-<fetch top="200">
+<fetch top="500">
   <entity name="deploymentstagerun">
     <all-attributes />
     <order attribute="createdon" descending="true" />
+    <link-entity name="deploymentstage"
+                 from="deploymentstageid"
+                 to="deploymentstageid"
+                 link-type="inner" />
   </entity>
 </fetch>`.trim();
     const result = await window.dataverseAPI.fetchXmlQuery(fetchXml);

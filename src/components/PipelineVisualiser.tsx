@@ -83,11 +83,29 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
                 </div>
             )}
 
-            {hasShared && (
-                <div className="info-box shared-legend">
-                    <strong>🔗 Shared environments</strong> — matching coloured borders indicate the same environment appears across multiple pipelines.
+            <details className="pipeline-legend">
+                <summary className="pipeline-legend__toggle">Legend &amp; Notes</summary>
+                <div className="pipeline-legend__body">
+                    <div className="pipeline-legend__row">
+                        <span className="pipeline-legend__label">Recent deployments:</span>
+                        <div className="pipeline-legend__dots-row">
+                            <span className="deployment-dot" style={{ background: '#22c55e' }} />
+                            <span className="pipeline-legend__item">Succeeded</span>
+                            <span className="deployment-dot" style={{ background: '#ef4444' }} />
+                            <span className="pipeline-legend__item">Failed</span>
+                            <span className="deployment-dot" style={{ background: '#eab308' }} />
+                            <span className="pipeline-legend__item">Cancelled</span>
+                            <span className="deployment-dot" style={{ background: '#d1d5db' }} />
+                            <span className="pipeline-legend__item">Other / In Progress</span>
+                        </div>
+                    </div>
+                    {hasShared && (
+                        <div className="pipeline-legend__row">
+                            <strong>🔗 Shared environments</strong> — matching coloured borders indicate the same environment appears across multiple pipelines.
+                        </div>
+                    )}
                 </div>
-            )}
+            </details>
 
             {pipelines.map(pipeline => (
                 <PipelineFlow
