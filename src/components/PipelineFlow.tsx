@@ -4,8 +4,7 @@ import type { DeploymentPipeline, DeploymentStageRun } from '../types/pipeline';
 
 interface TooltipState {
     text: string;
-    x: number;
-    y: number;
+    anchorRect: DOMRect;
 }
 
 // ─── Deployment run status helpers ───────────────────────────────────────────
@@ -64,19 +63,24 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
 
-    // After tooltip renders (hidden), compute clamped position and make it visible —
-    // all in one layout pass so the browser only ever paints the final position.
+    // Position tooltip above the dot, centred, clamped to viewport
     useLayoutEffect(() => {
         if (!tooltip || !tooltipRef.current) return;
         const el = tooltipRef.current;
+        const tip = el.getBoundingClientRect();
+        const dot = tooltip.anchorRect;
         const pad = 8;
-        let x = tooltip.x + 12;
-        let y = tooltip.y - 36;
-        const rect = el.getBoundingClientRect();
-        if (x + rect.width  > window.innerWidth  - pad) x = tooltip.x - rect.width  - 12;
-        if (x < pad)                                     x = pad;
-        if (y + rect.height > window.innerHeight - pad)  y = tooltip.y - rect.height - 4;
-        if (y < pad)                                     y = pad;
+
+        // Centre horizontally over the dot; preferred: above the dot
+        let x = dot.left + dot.width / 2 - tip.width / 2;
+        let y = dot.top - tip.height - 6;
+
+        // Clamp horizontally
+        if (x + tip.width > window.innerWidth - pad) x = window.innerWidth - pad - tip.width;
+        if (x < pad) x = pad;
+        // If above the viewport, flip below the dot instead
+        if (y < pad) y = dot.bottom + 6;
+
         el.style.left       = `${x}px`;
         el.style.top        = `${y}px`;
         el.style.visibility = 'visible';
@@ -87,7 +91,7 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
         if (run.artifactName) parts.push(run.artifactName);
         const date = formatRunDate(run.endTime ?? run.startTime);
         if (date) parts.push(date);
-        setTooltip({ text: parts.join(' · '), x: e.clientX, y: e.clientY });
+        setTooltip({ text: parts.join(' · '), anchorRect: (e.currentTarget as Element).getBoundingClientRect() });
     }, []);
 
     const handleDotLeave = useCallback(() => setTooltip(null), []);
@@ -160,22 +164,35 @@ const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
     pipelineCount = 1,
 }) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+    const envTooltipRef = useRef<HTMLDivElement>(null);
 
     const tooltipText = pipelineCount > 1
         ? `${envName} is part of ${pipelineCount} pipelines`
         : envName;
 
     const handleMouseEnter = useCallback((e: React.MouseEvent) => {
-        setTooltip({ text: tooltipText, x: e.clientX, y: e.clientY });
+        setTooltip({ text: tooltipText, anchorRect: (e.currentTarget as Element).getBoundingClientRect() });
     }, [tooltipText]);
-
-    const handleMouseMove = useCallback((e: React.MouseEvent) => {
-        setTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
-    }, []);
 
     const handleMouseLeave = useCallback(() => {
         setTooltip(null);
     }, []);
+
+    useLayoutEffect(() => {
+        if (!tooltip || !envTooltipRef.current) return;
+        const el = envTooltipRef.current;
+        const tip = el.getBoundingClientRect();
+        const dot = tooltip.anchorRect;
+        const pad = 8;
+        let x = dot.left + dot.width / 2 - tip.width / 2;
+        let y = dot.top - tip.height - 6;
+        if (x + tip.width > window.innerWidth - pad) x = window.innerWidth - pad - tip.width;
+        if (x < pad) x = pad;
+        if (y < pad) y = dot.bottom + 6;
+        el.style.left       = `${x}px`;
+        el.style.top        = `${y}px`;
+        el.style.visibility = 'visible';
+    }, [tooltip]);
 
     const sharedStyle: React.CSSProperties = sharedColor
         ? { borderColor: sharedColor, boxShadow: `0 0 0 3px ${sharedColor}55` }
@@ -187,7 +204,6 @@ const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
                 className={`pipeline-node ${isDevelopment ? 'pipeline-node--dev' : 'pipeline-node--target'}`}
                 style={sharedStyle}
                 onMouseEnter={handleMouseEnter}
-                onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
             >
                 {stageName && <div className="pipeline-node__stage-label">{stageName}</div>}
@@ -199,8 +215,9 @@ const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
 
             {tooltip && createPortal(
                 <div
+                    ref={envTooltipRef}
                     className="pipeline-tooltip"
-                    style={{ left: tooltip.x + 12, top: tooltip.y - 36 }}
+                    style={{ visibility: 'hidden', left: 0, top: 0 }}
                 >
                     {tooltip.text}
                 </div>,
