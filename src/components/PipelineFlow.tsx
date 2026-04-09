@@ -1,31 +1,32 @@
-import React, { useState, useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { DeploymentPipeline, DeploymentStageRun } from '../types/pipeline';
 
 interface TooltipState {
     text: string;
-    anchorRect: DOMRect;
+    x: number;
+    y: number;
 }
 
-/** Place the tooltip centred above the anchor element, clamped to the viewport.
- *  Uses a generous left guard (75px) because the ToolBox sidebar is a parent-window
- *  overlay (~50px wide) that getBoundingClientRect cannot detect from inside the iframe. */
-function positionTooltip(el: HTMLDivElement, anchor: DOMRect) {
-    const tip     = el.getBoundingClientRect();
+/** Compute tooltip position centred above the anchor, clamped to the viewport.
+ *  tipWidth must match the CSS max-width on .pipeline-tooltip (320px).
+ *  leftPad accounts for the ToolBox sidebar, which is a parent-window overlay
+ *  invisible to getBoundingClientRect inside the iframe (~50px; 75px is safe). */
+function computeTooltipPos(anchor: DOMRect): { x: number; y: number } {
+    const tipW    = 320;
+    const tipH    = 38;  // approximate single-line height
     const pad     = 8;
-    const leftPad = 75; // sidebar overlay clearance
+    const leftPad = 75;
 
-    let x = anchor.left + anchor.width  / 2 - tip.width  / 2; // centred above anchor
-    let y = anchor.top  - tip.height - 8;                      // above anchor
+    let x = anchor.left + anchor.width / 2 - tipW / 2;
+    let y = anchor.top - tipH - 8;
 
-    if (x + tip.width > window.innerWidth - pad) x = window.innerWidth - pad - tip.width;
-    if (x < leftPad)                             x = leftPad;
-    if (y < pad)                                 y = anchor.bottom + 8; // flip below if no room
-    if (y + tip.height > window.innerHeight - pad) y = window.innerHeight - pad - tip.height;
+    if (x + tipW > window.innerWidth - pad) x = window.innerWidth - pad - tipW;
+    if (x < leftPad)                        x = leftPad;
+    if (y < pad)                            y = anchor.bottom + 8;
+    if (y + tipH > window.innerHeight - pad) y = window.innerHeight - pad - tipH;
 
-    el.style.left       = `${x}px`;
-    el.style.top        = `${y}px`;
-    el.style.visibility = 'visible';
+    return { x, y };
 }
 
 // ─── Deployment run status helpers ───────────────────────────────────────────
@@ -82,20 +83,14 @@ interface DeploymentHistoryProps {
 
 const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
-    const tooltipRef = useRef<HTMLDivElement>(null);
-
-    // Position tooltip to the right of the dot, clamped to content area
-    useLayoutEffect(() => {
-        if (!tooltip || !tooltipRef.current) return;
-        positionTooltip(tooltipRef.current, tooltip.anchorRect);
-    }, [tooltip]);
 
     const handleDotEnter = useCallback((run: DeploymentStageRun, e: React.MouseEvent) => {
         const parts = [getRunStatusLabel(run.status)];
         if (run.artifactName) parts.push(run.artifactName);
         const date = formatRunDate(run.endTime ?? run.startTime);
         if (date) parts.push(date);
-        setTooltip({ text: parts.join(' · '), anchorRect: (e.currentTarget as Element).getBoundingClientRect() });
+        const { x, y } = computeTooltipPos((e.currentTarget as Element).getBoundingClientRect());
+        setTooltip({ text: parts.join(' · '), x, y });
     }, []);
 
     const handleDotLeave = useCallback(() => setTooltip(null), []);
@@ -136,11 +131,7 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
             </div>
 
             {tooltip && createPortal(
-                <div
-                    ref={tooltipRef}
-                    className="pipeline-tooltip"
-                    style={{ visibility: 'hidden', left: 0, top: 0 }}
-                >
+                <div className="pipeline-tooltip" style={{ left: tooltip.x, top: tooltip.y }}>
                     {tooltip.text}
                 </div>,
                 document.body
@@ -168,24 +159,17 @@ const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
     pipelineCount = 1,
 }) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
-    const envTooltipRef = useRef<HTMLDivElement>(null);
 
     const tooltipText = pipelineCount > 1
         ? `${envName} is part of ${pipelineCount} pipelines`
         : envName;
 
     const handleMouseEnter = useCallback((e: React.MouseEvent) => {
-        setTooltip({ text: tooltipText, anchorRect: (e.currentTarget as Element).getBoundingClientRect() });
+        const { x, y } = computeTooltipPos((e.currentTarget as Element).getBoundingClientRect());
+        setTooltip({ text: tooltipText, x, y });
     }, [tooltipText]);
 
-    const handleMouseLeave = useCallback(() => {
-        setTooltip(null);
-    }, []);
-
-    useLayoutEffect(() => {
-        if (!tooltip || !envTooltipRef.current) return;
-        positionTooltip(envTooltipRef.current, tooltip.anchorRect);
-    }, [tooltip]);
+    const handleMouseLeave = useCallback(() => setTooltip(null), []);
 
     const sharedStyle: React.CSSProperties = sharedColor
         ? { borderColor: sharedColor, boxShadow: `0 0 0 3px ${sharedColor}55` }
@@ -207,11 +191,7 @@ const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
             </div>
 
             {tooltip && createPortal(
-                <div
-                    ref={envTooltipRef}
-                    className="pipeline-tooltip"
-                    style={{ visibility: 'hidden', left: 0, top: 0 }}
-                >
+                <div className="pipeline-tooltip" style={{ left: tooltip.x, top: tooltip.y }}>
                     {tooltip.text}
                 </div>,
                 document.body
