@@ -9,21 +9,25 @@ interface TooltipState {
 }
 
 /** Compute tooltip position centred above the anchor, clamped to the viewport.
- *  tipWidth must match the CSS max-width on .pipeline-tooltip (320px).
- *  leftPad accounts for the ToolBox sidebar, which is a parent-window overlay
- *  invisible to getBoundingClientRect inside the iframe (~50px; 75px is safe). */
+ *  x is the CENTRE point of the tooltip — CSS applies translateX(-50%) so the
+ *  tooltip is horizontally centred on x.
+ *  leftPad accounts for the ToolBox sidebar overlay (~50px; 75px is safe).
+ *  We use half of max-tooltip-width (160px) for clamping so even a full-width
+ *  tooltip never clips the sidebar. */
 function computeTooltipPos(anchor: DOMRect): { x: number; y: number } {
-    const tipW    = 320;
-    const tipH    = 38;  // approximate single-line height
-    const pad     = 8;
-    const leftPad = 75;
+    const halfMaxW = 160; // half of CSS max-width: 320px
+    const tipH     = 38;  // approximate single-line height
+    const pad      = 8;
+    const leftPad  = 75;
 
-    let x = anchor.left + anchor.width / 2 - tipW / 2;
-    let y = anchor.top - tipH - 8;
+    // centre of tooltip aligned with centre of anchor
+    let x = anchor.left + anchor.width / 2;
+    let y = anchor.top - tipH - pad;
 
-    if (x + tipW > window.innerWidth - pad) x = window.innerWidth - pad - tipW;
-    if (x < leftPad)                        x = leftPad;
-    if (y < pad)                            y = anchor.bottom + 8;
+    // clamp so tooltip doesn't stray into sidebar or off right/bottom edges
+    if (x - halfMaxW < leftPad)              x = leftPad + halfMaxW;
+    if (x + halfMaxW > window.innerWidth)    x = window.innerWidth - halfMaxW;
+    if (y < pad)                             y = anchor.bottom + pad;
     if (y + tipH > window.innerHeight - pad) y = window.innerHeight - pad - tipH;
 
     return { x, y };
