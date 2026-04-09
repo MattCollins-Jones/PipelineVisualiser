@@ -7,6 +7,32 @@ interface TooltipState {
     anchorRect: DOMRect;
 }
 
+/** Place the tooltip to the right of the anchor; flip left only if it overflows the right edge.
+ *  Vertically centred on the anchor. Clamps to the actual content left boundary so the
+ *  tooltip stays clear of the ToolBox sidebar (which overlays the iframe from the parent). */
+function positionTooltip(el: HTMLDivElement, anchor: DOMRect) {
+    const tip  = el.getBoundingClientRect();
+    const vpad = 8;
+    // Use the right edge of the `.card` as the content-right boundary; fall back to innerWidth
+    const contentLeft  = document.querySelector<HTMLElement>('.card')?.getBoundingClientRect().left ?? 0;
+    const contentRight = window.innerWidth - vpad;
+
+    // Prefer right of anchor; flip left if it would overflow
+    let x = anchor.right + 8;
+    if (x + tip.width > contentRight) x = anchor.left - tip.width - 8;
+    // Final left clamp against actual content boundary
+    if (x < contentLeft + vpad) x = contentLeft + vpad;
+
+    // Vertically centred on anchor; clamp top/bottom
+    let y = anchor.top + anchor.height / 2 - tip.height / 2;
+    if (y + tip.height > window.innerHeight - vpad) y = window.innerHeight - vpad - tip.height;
+    if (y < vpad) y = vpad;
+
+    el.style.left       = `${x}px`;
+    el.style.top        = `${y}px`;
+    el.style.visibility = 'visible';
+}
+
 // ─── Deployment run status helpers ───────────────────────────────────────────
 
 /** Colour used for the dot indicators (decorative — not text). */
@@ -63,27 +89,10 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
 
-    // Position tooltip above the dot, centred, clamped to viewport
+    // Position tooltip to the right of the dot, clamped to content area
     useLayoutEffect(() => {
         if (!tooltip || !tooltipRef.current) return;
-        const el = tooltipRef.current;
-        const tip = el.getBoundingClientRect();
-        const dot = tooltip.anchorRect;
-        const pad = 8;
-
-        // Centre horizontally over the dot; preferred: above the dot
-        let x = dot.left + dot.width / 2 - tip.width / 2;
-        let y = dot.top - tip.height - 6;
-
-        // Clamp horizontally
-        if (x + tip.width > window.innerWidth - pad) x = window.innerWidth - pad - tip.width;
-        if (x < pad) x = pad;
-        // If above the viewport, flip below the dot instead
-        if (y < pad) y = dot.bottom + 6;
-
-        el.style.left       = `${x}px`;
-        el.style.top        = `${y}px`;
-        el.style.visibility = 'visible';
+        positionTooltip(tooltipRef.current, tooltip.anchorRect);
     }, [tooltip]);
 
     const handleDotEnter = useCallback((run: DeploymentStageRun, e: React.MouseEvent) => {
@@ -180,18 +189,7 @@ const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
 
     useLayoutEffect(() => {
         if (!tooltip || !envTooltipRef.current) return;
-        const el = envTooltipRef.current;
-        const tip = el.getBoundingClientRect();
-        const dot = tooltip.anchorRect;
-        const pad = 8;
-        let x = dot.left + dot.width / 2 - tip.width / 2;
-        let y = dot.top - tip.height - 6;
-        if (x + tip.width > window.innerWidth - pad) x = window.innerWidth - pad - tip.width;
-        if (x < pad) x = pad;
-        if (y < pad) y = dot.bottom + 6;
-        el.style.left       = `${x}px`;
-        el.style.top        = `${y}px`;
-        el.style.visibility = 'visible';
+        positionTooltip(envTooltipRef.current, tooltip.anchorRect);
     }, [tooltip]);
 
     const sharedStyle: React.CSSProperties = sharedColor
