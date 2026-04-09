@@ -90,10 +90,6 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
         setTooltip({ text: parts.join(' · '), x: e.clientX, y: e.clientY });
     }, []);
 
-    const handleDotMove = useCallback((e: React.MouseEvent) => {
-        setTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
-    }, []);
-
     const handleDotLeave = useCallback(() => setTooltip(null), []);
 
     if (runs.length === 0) return null;
@@ -112,7 +108,6 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
                             className="deployment-dot"
                             style={{ background: getRunStatusColor(run.status) }}
                             onMouseEnter={e => handleDotEnter(run, e)}
-                            onMouseMove={handleDotMove}
                             onMouseLeave={handleDotLeave}
                         />
                     ))}
