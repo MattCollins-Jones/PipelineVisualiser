@@ -16,7 +16,7 @@ interface TooltipState {
  *  tooltip never clips the sidebar. */
 function computeTooltipPos(anchor: DOMRect): { x: number; y: number } {
     const halfMaxW = 160; // half of CSS max-width: 320px
-    const tipH     = 38;  // approximate single-line height
+    const tipH     = 28;  // approximate single-line height
     const pad      = 8;
     const leftPad  = 75;
 
