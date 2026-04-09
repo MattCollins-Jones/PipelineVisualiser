@@ -8,23 +8,35 @@ interface TooltipState {
     y: number;
 }
 
-/** Compute tooltip position centred above the anchor, clamped to the viewport.
- *  x is the CENTRE point of the tooltip — CSS applies translateX(-50%) so the
- *  tooltip is horizontally centred on x.
- *  leftPad accounts for the ToolBox sidebar overlay (~50px; 75px is safe).
- *  We use half of max-tooltip-width (160px) for clamping so even a full-width
- *  tooltip never clips the sidebar. */
-function computeTooltipPos(anchor: DOMRect): { x: number; y: number } {
-    const halfMaxW = 160; // half of CSS max-width: 320px
-    const tipH     = 28;  // approximate single-line height
+/** Compute tooltip position centred above a mouse cursor position.
+ *  Used for small dot elements — positions tooltip above where the mouse is
+ *  so it lines up exactly with the hovered dot regardless of sidebar clamping. */
+function computeDotTooltipPos(mouseX: number, anchorTop: number): { x: number; y: number } {
+    const halfMaxW = 160;
+    const tipH     = 28;
     const pad      = 8;
-    const leftPad  = 75;
 
-    // centre of tooltip aligned with centre of anchor
+    let x = mouseX;
+    let y = anchorTop - tipH - pad;
+
+    if (x - halfMaxW < pad)              x = pad + halfMaxW;
+    if (x + halfMaxW > window.innerWidth) x = window.innerWidth - halfMaxW;
+    if (y < pad)                          y = anchorTop + pad;
+
+    return { x, y };
+}
+
+/** Compute tooltip position centred above a larger element (e.g. environment node).
+ *  Uses element centre as x with sidebar-safe clamping. */
+function computeNodeTooltipPos(anchor: DOMRect): { x: number; y: number } {
+    const halfMaxW = 160;
+    const tipH     = 28;
+    const pad      = 8;
+    const leftPad  = 75; // ToolBox sidebar overlay width (~50px; 75px is safe)
+
     let x = anchor.left + anchor.width / 2;
     let y = anchor.top - tipH - pad;
 
-    // clamp so tooltip doesn't stray into sidebar or off right/bottom edges
     if (x - halfMaxW < leftPad)              x = leftPad + halfMaxW;
     if (x + halfMaxW > window.innerWidth)    x = window.innerWidth - halfMaxW;
     if (y < pad)                             y = anchor.bottom + pad;
@@ -93,7 +105,8 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
         if (run.artifactName) parts.push(run.artifactName);
         const date = formatRunDate(run.endTime ?? run.startTime);
         if (date) parts.push(date);
-        const { x, y } = computeTooltipPos((e.currentTarget as Element).getBoundingClientRect());
+        const anchor = (e.currentTarget as Element).getBoundingClientRect();
+        const { x, y } = computeDotTooltipPos(e.clientX, anchor.top);
         setTooltip({ text: parts.join(' · '), x, y });
     }, []);
 
@@ -169,7 +182,7 @@ const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
         : envName;
 
     const handleMouseEnter = useCallback((e: React.MouseEvent) => {
-        const { x, y } = computeTooltipPos((e.currentTarget as Element).getBoundingClientRect());
+        const { x, y } = computeNodeTooltipPos((e.currentTarget as Element).getBoundingClientRect());
         setTooltip({ text: tooltipText, x, y });
     }, [tooltipText]);
 
