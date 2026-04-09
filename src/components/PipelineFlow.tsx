@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { DeploymentPipeline, DeploymentStageRun } from '../types/pipeline';
 
@@ -62,6 +62,25 @@ interface DeploymentHistoryProps {
 
 const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+    const [tooltipOffset, setTooltipOffset] = useState({ x: 0, y: 0 });
+
+    // After tooltip renders, clamp it inside the viewport
+    useLayoutEffect(() => {
+        if (!tooltip || !tooltipRef.current) {
+            setTooltipOffset({ x: 0, y: 0 });
+            return;
+        }
+        const rect = tooltipRef.current.getBoundingClientRect();
+        const pad = 8;
+        let dx = 0;
+        let dy = 0;
+        if (rect.right > window.innerWidth - pad)  dx = window.innerWidth - pad - rect.right;
+        if (rect.left  < pad)                       dx = pad - rect.left;
+        if (rect.bottom > window.innerHeight - pad) dy = window.innerHeight - pad - rect.bottom;
+        if (rect.top   < pad)                       dy = pad - rect.top;
+        setTooltipOffset({ x: dx, y: dy });
+    }, [tooltip]);
 
     const handleDotEnter = useCallback((run: DeploymentStageRun, e: React.MouseEvent) => {
         const parts = [getRunStatusLabel(run.status)];
@@ -114,7 +133,14 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
             </div>
 
             {tooltip && createPortal(
-                <div className="pipeline-tooltip" style={{ left: tooltip.x + 12, top: tooltip.y - 36 }}>
+                <div
+                    ref={tooltipRef}
+                    className="pipeline-tooltip"
+                    style={{
+                        left: tooltip.x + 12 + tooltipOffset.x,
+                        top:  tooltip.y - 36 + tooltipOffset.y,
+                    }}
+                >
                     {tooltip.text}
                 </div>,
                 document.body
