@@ -63,23 +63,23 @@ interface DeploymentHistoryProps {
 const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
-    const [tooltipOffset, setTooltipOffset] = useState({ x: 0, y: 0 });
 
-    // After tooltip renders, clamp it inside the viewport
+    // After tooltip renders (hidden), compute clamped position and make it visible —
+    // all in one layout pass so the browser only ever paints the final position.
     useLayoutEffect(() => {
-        if (!tooltip || !tooltipRef.current) {
-            setTooltipOffset({ x: 0, y: 0 });
-            return;
-        }
-        const rect = tooltipRef.current.getBoundingClientRect();
+        if (!tooltip || !tooltipRef.current) return;
+        const el = tooltipRef.current;
         const pad = 8;
-        let dx = 0;
-        let dy = 0;
-        if (rect.right > window.innerWidth - pad)  dx = window.innerWidth - pad - rect.right;
-        if (rect.left  < pad)                       dx = pad - rect.left;
-        if (rect.bottom > window.innerHeight - pad) dy = window.innerHeight - pad - rect.bottom;
-        if (rect.top   < pad)                       dy = pad - rect.top;
-        setTooltipOffset({ x: dx, y: dy });
+        let x = tooltip.x + 12;
+        let y = tooltip.y - 36;
+        const rect = el.getBoundingClientRect();
+        if (x + rect.width  > window.innerWidth  - pad) x = tooltip.x - rect.width  - 12;
+        if (x < pad)                                     x = pad;
+        if (y + rect.height > window.innerHeight - pad)  y = tooltip.y - rect.height - 4;
+        if (y < pad)                                     y = pad;
+        el.style.left       = `${x}px`;
+        el.style.top        = `${y}px`;
+        el.style.visibility = 'visible';
     }, [tooltip]);
 
     const handleDotEnter = useCallback((run: DeploymentStageRun, e: React.MouseEvent) => {
@@ -136,10 +136,7 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
                 <div
                     ref={tooltipRef}
                     className="pipeline-tooltip"
-                    style={{
-                        left: tooltip.x + 12 + tooltipOffset.x,
-                        top:  tooltip.y - 36 + tooltipOffset.y,
-                    }}
+                    style={{ visibility: 'hidden', left: 0, top: 0 }}
                 >
                     {tooltip.text}
                 </div>,
