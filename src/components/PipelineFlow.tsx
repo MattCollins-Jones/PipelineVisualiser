@@ -7,26 +7,21 @@ interface TooltipState {
     anchorRect: DOMRect;
 }
 
-/** Place the tooltip to the right of the anchor; flip left only if it overflows the right edge.
- *  Vertically centred on the anchor. Clamps to the actual content left boundary so the
- *  tooltip stays clear of the ToolBox sidebar (which overlays the iframe from the parent). */
+/** Place the tooltip centred above the anchor element, clamped to the viewport.
+ *  Uses a generous left guard (75px) because the ToolBox sidebar is a parent-window
+ *  overlay (~50px wide) that getBoundingClientRect cannot detect from inside the iframe. */
 function positionTooltip(el: HTMLDivElement, anchor: DOMRect) {
-    const tip  = el.getBoundingClientRect();
-    const vpad = 8;
-    // Use the right edge of the `.card` as the content-right boundary; fall back to innerWidth
-    const contentLeft  = document.querySelector<HTMLElement>('.card')?.getBoundingClientRect().left ?? 0;
-    const contentRight = window.innerWidth - vpad;
+    const tip     = el.getBoundingClientRect();
+    const pad     = 8;
+    const leftPad = 75; // sidebar overlay clearance
 
-    // Prefer right of anchor; flip left if it would overflow
-    let x = anchor.right + 8;
-    if (x + tip.width > contentRight) x = anchor.left - tip.width - 8;
-    // Final left clamp against actual content boundary
-    if (x < contentLeft + vpad) x = contentLeft + vpad;
+    let x = anchor.left + anchor.width  / 2 - tip.width  / 2; // centred above anchor
+    let y = anchor.top  - tip.height - 8;                      // above anchor
 
-    // Vertically centred on anchor; clamp top/bottom
-    let y = anchor.top + anchor.height / 2 - tip.height / 2;
-    if (y + tip.height > window.innerHeight - vpad) y = window.innerHeight - vpad - tip.height;
-    if (y < vpad) y = vpad;
+    if (x + tip.width > window.innerWidth - pad) x = window.innerWidth - pad - tip.width;
+    if (x < leftPad)                             x = leftPad;
+    if (y < pad)                                 y = anchor.bottom + 8; // flip below if no room
+    if (y + tip.height > window.innerHeight - pad) y = window.innerHeight - pad - tip.height;
 
     el.style.left       = `${x}px`;
     el.style.top        = `${y}px`;
