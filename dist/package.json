@@ -6,7 +6,17 @@
     "main": "index.html",
     "icon": "MCJ-Logo.svg",
     "author": "Matt Collins-Jones",
+    "contributors": [
+        {
+            "name": "Matt Collins-Jones",
+            "url": "https://github.com/MattCollins-Jones"
+        }
+    ],
     "license": "MIT",
+    "configurations": {
+        "repository": "https://github.com/MattCollins-Jones/PipelineVisualiser",
+        "readmeUrl": "https://raw.githubusercontent.com/MattCollins-Jones/PipelineVisualiser/master/README.md"
+    },
     "engines": {
         "node": ">=18.0.0"
     },
