@@ -56,7 +56,7 @@ src/
 | `deploymentstage` | Links environments to a pipeline; self-referential for ordering |
 | `deploymentenvironment` | Environment records (name, type, ID) |
 | `deploymentpipeline_deploymentenvironment` | N:N intersect — links pipelines to their dev environment |
-| `deploymentstagrun` | Deployment Stage Run records — status, artifact, version, start/end times |
+| `deploymentstagerun` | Deployment Stage Run records — status, artifact, version, start/end times |
 
 ## License
 
