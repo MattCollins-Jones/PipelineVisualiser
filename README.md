@@ -8,8 +8,28 @@ A Power Platform ToolBox tool that visualises deployment pipelines across enviro
 - Displays each pipeline as a visual flow: **Dev Environment → Stage 1 → Stage 2 → ...**
 - Colour-coded nodes — blue for Development, purple for Target environments
 - Shared environment detection — environments appearing across multiple pipelines receive a unique accent colour so intersections are immediately visible
-- Hover tooltips on each environment node showing how many pipelines it belongs to
+- Hover tooltips on each environment node and deployment dot showing contextual details
 - Automatically refreshes when the active connection changes
+
+### Deployment History
+
+- Shows the **last deployment** against each pipeline — artifact name, solution version, status and date
+- Displays the **last 5 deployments** as coloured indicator dots:
+  - 🟢 Green — Succeeded
+  - 🔴 Red — Failed
+  - 🟡 Yellow — Cancelled
+  - ⚫ Grey — Any other status
+- Hover a dot to see full details: status, artifact name, and date
+- Orphaned stage runs (not linked to a deployment stage) are automatically excluded
+
+### Export
+
+- **Export PNG** button captures a snapshot of all pipeline cards and saves it as `pipelines-YYYY-MM-DD.png` — useful for storing in GitHub, Confluence, ADO, or other knowledge hubs
+
+### Legend
+
+- Collapsible legend at the top explains the dot colour key and highlights any shared environments
+- Can be collapsed to maximise usable screen area
 
 ## Structure
 
@@ -36,26 +56,7 @@ src/
 | `deploymentstage` | Links environments to a pipeline; self-referential for ordering |
 | `deploymentenvironment` | Environment records (name, type, ID) |
 | `deploymentpipeline_deploymentenvironment` | N:N intersect — links pipelines to their dev environment |
-
-## Installation
-
-```bash
-npm install
-```
-
-## Development
-
-```bash
-npm run dev
-```
-
-## Build
-
-```bash
-npm run build
-```
-
-The `dist/` folder can then be installed as a tool in Power Platform ToolBox.
+| `deploymentstagrun` | Deployment Stage Run records — status, artifact, version, start/end times |
 
 ## License
 
