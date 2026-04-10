@@ -100,15 +100,25 @@ interface DeploymentHistoryProps {
 const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
-    const handleDotEnter = useCallback((run: DeploymentStageRun, e: React.MouseEvent) => {
+    const buildDotTooltip = useCallback((run: DeploymentStageRun): string => {
         const parts = [getRunStatusLabel(run.status)];
         if (run.artifactName) parts.push(run.artifactName);
         const date = formatRunDate(run.endTime ?? run.startTime);
         if (date) parts.push(date);
+        return parts.join(' · ');
+    }, []);
+
+    const handleDotEnter = useCallback((run: DeploymentStageRun, e: React.MouseEvent) => {
         const anchor = (e.currentTarget as Element).getBoundingClientRect();
         const { x, y } = computeDotTooltipPos(e.clientX, anchor.top);
-        setTooltip({ text: parts.join(' · '), x, y });
-    }, []);
+        setTooltip({ text: buildDotTooltip(run), x, y });
+    }, [buildDotTooltip]);
+
+    const handleDotFocus = useCallback((run: DeploymentStageRun, e: React.FocusEvent) => {
+        const anchor = (e.currentTarget as Element).getBoundingClientRect();
+        const { x, y } = computeDotTooltipPos(anchor.left + anchor.width / 2, anchor.top);
+        setTooltip({ text: buildDotTooltip(run), x, y });
+    }, [buildDotTooltip]);
 
     const handleDotLeave = useCallback(() => setTooltip(null), []);
 
@@ -123,12 +133,16 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
             <div className="deployment-history">
                 <div className="deployment-dots">
                     {runs.map(run => (
-                        <span
+                        <button
                             key={run.id}
+                            type="button"
                             className="deployment-dot"
                             style={{ background: getRunStatusColor(run.status) }}
+                            aria-label={buildDotTooltip(run)}
                             onMouseEnter={e => handleDotEnter(run, e)}
                             onMouseLeave={handleDotLeave}
+                            onFocus={e => handleDotFocus(run, e)}
+                            onBlur={handleDotLeave}
                         />
                     ))}
                 </div>
