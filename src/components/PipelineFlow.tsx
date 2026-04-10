@@ -140,7 +140,7 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
                             style={{ background: getRunStatusColor(run.status) }}
                             aria-label={buildDotTooltip(run)}
                             onMouseEnter={e => handleDotEnter(run, e)}
-                            onMouseLeave={handleDotLeave}
+                            onMouseLeave={e => { if (e.currentTarget !== document.activeElement) handleDotLeave(); }}
                             onFocus={e => handleDotFocus(run, e)}
                             onBlur={handleDotLeave}
                         />
