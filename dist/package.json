@@ -1,6 +1,6 @@
 {
     "name": "pptb-pipeline-visualiser",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "displayName": "Pipeline Visualiser",
     "description": "A tool to help visualise pipelines across environments.",
     "main": "index.html",
