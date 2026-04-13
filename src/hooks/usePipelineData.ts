@@ -127,6 +127,23 @@ async function fetchPipelinesWithDevEnv(): Promise<Record<string, any>[]> {
     return result.value ?? [];
 }
 
+/**
+ * Returns true when the Dataverse error indicates the Deployment Pipelines
+ * application tables do not exist in this environment (i.e. the managed
+ * solution is not installed).
+ */
+function isPipelineAppNotInstalledError(message: string): boolean {
+    const lower = message.toLowerCase();
+    // Dataverse returns messages like "Could not find entity with name 'deploymentpipeline'"
+    // or "The entity with a name = 'deploymentpipeline' was not found in the MetadataCache"
+    const pipelineEntities = ['deploymentpipeline', 'deploymentstage', 'deploymentenvironment', 'deploymentstagerun'];
+    const notFoundPhrases = ['could not find entity', 'was not found', 'does not exist', 'entity with name'];
+    return (
+        pipelineEntities.some(e => lower.includes(e)) &&
+        notFoundPhrases.some(p => lower.includes(p))
+    );
+}
+
 export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | null) {
     const [pipelines, setPipelines] = useState<DeploymentPipeline[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -293,7 +310,14 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
             setPipelines(result);
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            setError(`Failed to load pipeline data: ${message}`);
+            if (isPipelineAppNotInstalledError(message)) {
+                setError(
+                    'The Deployment Pipelines application does not appear to be installed in this environment. ' +
+                    'Please install it from AppSource and try again.'
+                );
+            } else {
+                setError(`Failed to load pipeline data: ${message}`);
+            }
         } finally {
             setIsLoading(false);
         }

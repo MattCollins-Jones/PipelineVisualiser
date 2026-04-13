@@ -114,6 +114,7 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
             {!isLoading && !error && connection && pipelines.length === 0 && (
                 <div className="info-box">
                     <p>No deployment pipelines found in this environment.</p>
+                    <p>If you expect pipelines to be present, ensure the <strong>Deployment Pipelines</strong> application is installed and that at least one pipeline has been configured.</p>
                 </div>
             )}
 
