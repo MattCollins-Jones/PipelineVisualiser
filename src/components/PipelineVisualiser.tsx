@@ -113,7 +113,8 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
 
             {!isLoading && !error && connection && pipelines.length === 0 && (
                 <div className="info-box">
-                    <p>No deployment pipelines found in this environment.</p>
+                    <p><strong>No deployment pipelines found.</strong></p>
+                    <p>To get started, make sure the <strong>Deployment Pipeline Configuration</strong> app is installed in this environment and at least one pipeline has been created. You may also need the <strong>Deployment Pipeline Administrator</strong> or <strong>Deployment Pipeline User</strong> security role.</p>
                 </div>
             )}
 
