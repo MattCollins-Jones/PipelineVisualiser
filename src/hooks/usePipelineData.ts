@@ -293,7 +293,14 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
             setPipelines(result);
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            setError(`Failed to load pipeline data: ${message}`);
+            // 0x80060888 = "Resource not found for the segment" — the deployment pipeline
+            // tables don't exist in this environment, meaning the app isn't installed.
+            // Treat this as an empty state so the helpful setup message is shown instead.
+            if (message.includes('0x80060888') || message.toLowerCase().includes('resource not found for the segment')) {
+                setPipelines([]);
+            } else {
+                setError(`Failed to load pipeline data: ${message}`);
+            }
         } finally {
             setIsLoading(false);
         }
