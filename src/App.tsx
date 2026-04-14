@@ -1,9 +1,15 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PipelineVisualiser } from "./components/PipelineVisualiser";
 import { useConnection, useToolboxEvents } from "./hooks/useToolboxAPI";
 
 function App() {
     const { connection, refreshConnection } = useConnection();
+    const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+
+    useEffect(() => {
+        document.documentElement.classList.toggle('dark', darkMode);
+        localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+    }, [darkMode]);
 
     const handleEvent = useCallback(
         (event: string) => {
@@ -19,7 +25,17 @@ function App() {
     return (
         <>
             <header className="header">
-                <h1>🚀 Pipeline Visualiser</h1>
+                <div className="header__top">
+                    <h1>🚀 Pipeline Visualiser</h1>
+                    <button
+                        className="btn-theme-toggle"
+                        onClick={() => setDarkMode(d => !d)}
+                        title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                        aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                    >
+                        {darkMode ? '☀️' : '🌙'}
+                    </button>
+                </div>
                 <p className="subtitle">Visualise deployment pipelines across environments</p>
             </header>
 

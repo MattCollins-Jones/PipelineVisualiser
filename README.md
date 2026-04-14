@@ -2,6 +2,19 @@
 
 A Power Platform ToolBox tool that visualises deployment pipelines across environments.
 
+## What's New
+
+### v1.1.0
+- 🌙 **Dark mode** — toggle between light and dark themes using the 🌙/☀️ button in the header; preference is saved across sessions
+- 💬 **Smarter error handling** — if the Deployment Pipeline Configuration app is not installed, a helpful setup message is shown instead of a raw API error
+- 📄 **MIT licence** — updated with correct year and author name
+
+### v1.0.1
+- Added `npm-shrinkwrap.json` for Power Platform ToolBox submission requirements
+
+### v1.0.0
+- Initial release
+
 ## Features
 
 - Queries deployment pipeline data directly from Dataverse
