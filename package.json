@@ -1,10 +1,6 @@
 {
     "name": "pptb-pipeline-visualiser",
-<<<<<<< HEAD
-    "version": "1.0.1",
-=======
     "version": "1.1.0",
->>>>>>> dedbc53 (1.1.0)
     "displayName": "Pipeline Visualiser",
     "description": "A tool to help visualise pipelines across environments.",
     "main": "index.html",
