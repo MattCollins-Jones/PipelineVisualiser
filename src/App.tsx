@@ -6,6 +6,15 @@ function App() {
     const { connection, refreshConnection } = useConnection();
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
+    // On first load with no stored preference, default to the PPTB app theme
+    useEffect(() => {
+        if (!localStorage.getItem('theme') && window.toolboxAPI?.utils?.getCurrentTheme) {
+            window.toolboxAPI.utils.getCurrentTheme()
+                .then(theme => setDarkMode(theme === 'dark'))
+                .catch(() => {});
+        }
+    }, []);
+
     useEffect(() => {
         document.documentElement.classList.toggle('dark', darkMode);
         localStorage.setItem('theme', darkMode ? 'dark' : 'light');
