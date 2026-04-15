@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState, useCallback } from 'react';
 import html2canvas from 'html2canvas';
 import { usePipelineData } from '../hooks/usePipelineData';
 import { PipelineFlow } from './PipelineFlow';
+import { AppSettings } from '../types/settings';
 
 // Golden angle (~137.5°) spacing gives maximum perceptual separation
 // between consecutive colours — works for any number of environments.
@@ -12,9 +13,10 @@ function getSharedEnvColor(index: number): string {
 
 interface PipelineVisualiserProps {
     connection: ToolBoxAPI.DataverseConnection | null;
+    settings: AppSettings;
 }
 
-export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connection }) => {
+export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connection, settings }) => {
     const { pipelines, isLoading, error, refresh } = usePipelineData(connection);
     const exportRef = useRef<HTMLDivElement>(null);
     const [isExporting, setIsExporting] = useState(false);
@@ -119,6 +121,7 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
             )}
 
             <div ref={exportRef} className="export-region">
+                {settings.showLegend && (
                 <details className="pipeline-legend">
                     <summary className="pipeline-legend__toggle">Legend &amp; Notes</summary>
                     <div className="pipeline-legend__body">
@@ -142,6 +145,7 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
                         )}
                     </div>
                 </details>
+                )}
 
                 {pipelines.map(pipeline => (
                     <PipelineFlow
@@ -149,6 +153,8 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
                         pipeline={pipeline}
                         sharedColors={sharedColors}
                         envPipelineCount={envPipelineCount}
+                        showDeploymentDots={settings.showDeploymentDots}
+                        showLastDeployment={settings.showLastDeployment}
                     />
                 ))}
             </div>

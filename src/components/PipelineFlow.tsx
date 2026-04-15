@@ -95,9 +95,11 @@ function formatRunDate(isoString: string | null): string {
 
 interface DeploymentHistoryProps {
     runs: DeploymentStageRun[];
+    showDots: boolean;
+    showLastDeployment: boolean;
 }
 
-const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
+const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs, showDots, showLastDeployment }) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
     const buildDotTooltip = useCallback((run: DeploymentStageRun): string => {
@@ -122,7 +124,7 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
 
     const handleDotLeave = useCallback(() => setTooltip(null), []);
 
-    if (runs.length === 0) return null;
+    if (runs.length === 0 || (!showDots && !showLastDeployment)) return null;
 
     const lastRun = runs[0];
     const statusTextColor = getRunStatusTextColor(lastRun.status);
@@ -131,34 +133,40 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
     return (
         <>
             <div className="deployment-history">
-                <div className="deployment-dots">
-                    {runs.map(run => (
-                        <button
-                            key={run.id}
-                            type="button"
-                            className="deployment-dot"
-                            style={{ background: getRunStatusColor(run.status) }}
-                            aria-label={buildDotTooltip(run)}
-                            onMouseEnter={e => handleDotEnter(run, e)}
-                            onMouseLeave={e => { if (e.currentTarget !== document.activeElement) handleDotLeave(); }}
-                            onFocus={e => handleDotFocus(run, e)}
-                            onBlur={handleDotLeave}
-                        />
-                    ))}
-                </div>
-                <span className="deployment-history__divider" aria-hidden="true" />
-                <div className="deployment-summary">
-                    {lastRun.artifactName && (
-                        <span className="deployment-summary__artifact">
-                            {lastRun.artifactName}
-                            {lastRun.solutionVersion && ` v${lastRun.solutionVersion}`}
+                {showDots && (
+                    <div className="deployment-dots">
+                        {runs.map(run => (
+                            <button
+                                key={run.id}
+                                type="button"
+                                className="deployment-dot"
+                                style={{ background: getRunStatusColor(run.status) }}
+                                aria-label={buildDotTooltip(run)}
+                                onMouseEnter={e => handleDotEnter(run, e)}
+                                onMouseLeave={e => { if (e.currentTarget !== document.activeElement) handleDotLeave(); }}
+                                onFocus={e => handleDotFocus(run, e)}
+                                onBlur={handleDotLeave}
+                            />
+                        ))}
+                    </div>
+                )}
+                {showDots && showLastDeployment && (
+                    <span className="deployment-history__divider" aria-hidden="true" />
+                )}
+                {showLastDeployment && (
+                    <div className="deployment-summary">
+                        {lastRun.artifactName && (
+                            <span className="deployment-summary__artifact">
+                                {lastRun.artifactName}
+                                {lastRun.solutionVersion && ` v${lastRun.solutionVersion}`}
+                            </span>
+                        )}
+                        <span className="deployment-summary__status" style={{ color: statusTextColor }}>
+                            {getRunStatusLabel(lastRun.status)}
                         </span>
-                    )}
-                    <span className="deployment-summary__status" style={{ color: statusTextColor }}>
-                        {getRunStatusLabel(lastRun.status)}
-                    </span>
-                    {dateStr && <span className="deployment-summary__date">{dateStr}</span>}
-                </div>
+                        {dateStr && <span className="deployment-summary__date">{dateStr}</span>}
+                    </div>
+                )}
             </div>
 
             {tooltip && createPortal(
@@ -235,15 +243,17 @@ interface PipelineFlowProps {
     pipeline: DeploymentPipeline;
     sharedColors: Map<string, string>;
     envPipelineCount: Map<string, number>;
+    showDeploymentDots: boolean;
+    showLastDeployment: boolean;
 }
 
-export const PipelineFlow: React.FC<PipelineFlowProps> = ({ pipeline, sharedColors, envPipelineCount }) => {
+export const PipelineFlow: React.FC<PipelineFlowProps> = ({ pipeline, sharedColors, envPipelineCount, showDeploymentDots, showLastDeployment }) => {
     const hasNodes = pipeline.developmentEnvironment || pipeline.stages.length > 0;
 
     return (
         <div className="pipeline-card">
             <h3 className="pipeline-card__name">{pipeline.name}</h3>
-            <DeploymentHistory runs={pipeline.recentRuns} />
+            <DeploymentHistory runs={pipeline.recentRuns} showDots={showDeploymentDots} showLastDeployment={showLastDeployment} />
             <div className="pipeline-flow">
                 {pipeline.developmentEnvironment && (
                     <>
