@@ -29,12 +29,64 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
         if (!exportRef.current) return;
         setIsExporting(true);
         try {
-            const canvas = await html2canvas(exportRef.current, {
-                backgroundColor: '#f3f4f6',
-                scale: 2, // 2× for sharper output on high-DPI screens
-                useCORS: true,
-                logging: false,
-            });
+            const source = exportRef.current;
+
+            // html2canvas clips overflow:auto/hidden content to visible size.
+            // Temporarily expand every clipped element to its full scrollable width so
+            // the full pipeline (however long) is captured, regardless of screen width
+            // or whether the toolbox side-pane is open.
+            type SavedStyle = { el: HTMLElement; overflow: string; overflowX: string; width: string; maxWidth: string };
+            const saved: SavedStyle[] = [];
+
+            const allEls = [source, ...Array.from(source.querySelectorAll<HTMLElement>('*'))];
+            for (const el of allEls) {
+                const cs = window.getComputedStyle(el);
+                if (cs.overflowX === 'auto' || cs.overflowX === 'hidden' ||
+                    cs.overflow === 'auto' || cs.overflow === 'hidden') {
+                    saved.push({
+                        el,
+                        overflow: el.style.overflow,
+                        overflowX: el.style.overflowX,
+                        width: el.style.width,
+                        maxWidth: el.style.maxWidth,
+                    });
+                    el.style.overflow = 'visible';
+                    el.style.overflowX = 'visible';
+                    el.style.width = el.scrollWidth + 'px';
+                    el.style.maxWidth = 'none';
+                }
+            }
+
+            // Let the browser reflow before measuring final dimensions
+            await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
+            const captureWidth = source.scrollWidth;
+            const captureHeight = source.scrollHeight;
+
+            let canvas: HTMLCanvasElement;
+            try {
+                canvas = await html2canvas(source, {
+                    backgroundColor: '#f3f4f6',
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    width: captureWidth,
+                    height: captureHeight,
+                    windowWidth: captureWidth,
+                    windowHeight: captureHeight,
+                    scrollX: 0,
+                    scrollY: 0,
+                });
+            } finally {
+                // Always restore styles, even if html2canvas throws
+                for (const s of saved) {
+                    s.el.style.overflow = s.overflow;
+                    s.el.style.overflowX = s.overflowX;
+                    s.el.style.width = s.width;
+                    s.el.style.maxWidth = s.maxWidth;
+                }
+            }
+
             const link = document.createElement('a');
             link.download = `pipelines-${new Date().toISOString().slice(0, 10)}.png`;
             link.href = canvas.toDataURL('image/png');
