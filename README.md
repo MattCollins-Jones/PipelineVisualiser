@@ -4,6 +4,12 @@ A Power Platform ToolBox tool that visualises deployment pipelines across enviro
 
 ## What's New
 
+### v1.1.5
+- 👤 **Delegated deployment indicators** — pipeline stages configured for delegated deployments now show a visual badge:
+  - 👤 **Delegated: User** — stage is delegated to the Stage Owner
+  - 🤖 **Delegated: SPN** — stage is delegated to a Service Principal
+- 🗝️ **Updated legend** — the legend now includes entries for both delegation types
+
 ### v1.1.4
 - ⚙️ **Settings panel** — click the ⚙️ button in the header to open a slide-out settings panel
 - 🎨 **Theme control** — choose between *Follow toolbox theme* (default), *Light*, or *Dark*; the tool always respects the Power Platform ToolBox app theme by default, with the option to override per-tool
