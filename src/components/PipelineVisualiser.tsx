@@ -31,30 +31,42 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
         try {
             const source = exportRef.current;
 
-            // html2canvas clips overflow:auto/hidden content to visible size.
-            // Temporarily expand every clipped element to its full scrollable width so
-            // the full pipeline (however long) is captured, regardless of screen width
-            // or whether the toolbox side-pane is open.
-            type SavedStyle = { el: HTMLElement; overflow: string; overflowX: string; width: string; maxWidth: string };
+            type SavedStyle = { el: HTMLElement; overflow: string; overflowX: string; width: string; minWidth: string; maxWidth: string };
             const saved: SavedStyle[] = [];
 
-            const allEls = [source, ...Array.from(source.querySelectorAll<HTMLElement>('*'))];
-            for (const el of allEls) {
+            const saveAndExpand = (el: HTMLElement) => {
+                saved.push({
+                    el,
+                    overflow: el.style.overflow,
+                    overflowX: el.style.overflowX,
+                    width: el.style.width,
+                    minWidth: el.style.minWidth,
+                    maxWidth: el.style.maxWidth,
+                });
+                el.style.overflow = 'visible';
+                el.style.overflowX = 'visible';
+                el.style.width = el.scrollWidth + 'px';
+                el.style.minWidth = 'unset';
+                el.style.maxWidth = 'none';
+            };
+
+            // Expand all overflow-clipped descendants so their content isn't cut off
+            for (const el of Array.from(source.querySelectorAll<HTMLElement>('*'))) {
                 const cs = window.getComputedStyle(el);
                 if (cs.overflowX === 'auto' || cs.overflowX === 'hidden' ||
                     cs.overflow === 'auto' || cs.overflow === 'hidden') {
-                    saved.push({
-                        el,
-                        overflow: el.style.overflow,
-                        overflowX: el.style.overflowX,
-                        width: el.style.width,
-                        maxWidth: el.style.maxWidth,
-                    });
-                    el.style.overflow = 'visible';
-                    el.style.overflowX = 'visible';
-                    el.style.width = el.scrollWidth + 'px';
-                    el.style.maxWidth = 'none';
+                    saveAndExpand(el);
                 }
+            }
+
+            // Always expand the source element itself so its background covers full width
+            saveAndExpand(source);
+
+            // Also expand parent containers so their backgrounds fill the full capture area
+            let ancestor = source.parentElement;
+            while (ancestor && ancestor !== document.body) {
+                saveAndExpand(ancestor);
+                ancestor = ancestor.parentElement;
             }
 
             // Let the browser reflow before measuring final dimensions
@@ -63,10 +75,13 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
             const captureWidth = source.scrollWidth;
             const captureHeight = source.scrollHeight;
 
+            // Determine background colour from the source element (respects dark mode)
+            const sourceBg = window.getComputedStyle(source).backgroundColor;
+
             let canvas: HTMLCanvasElement;
             try {
                 canvas = await html2canvas(source, {
-                    backgroundColor: '#f3f4f6',
+                    backgroundColor: sourceBg || '#f3f4f6',
                     scale: 2,
                     useCORS: true,
                     logging: false,
@@ -83,6 +98,7 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
                     s.el.style.overflow = s.overflow;
                     s.el.style.overflowX = s.overflowX;
                     s.el.style.width = s.width;
+                    s.el.style.minWidth = s.minWidth;
                     s.el.style.maxWidth = s.maxWidth;
                 }
             }
