@@ -260,14 +260,24 @@ interface PipelineFlowProps {
     envPipelineCount: Map<string, number>;
     showDeploymentDots: boolean;
     showLastDeployment: boolean;
+    onViewHistory: (pipeline: DeploymentPipeline) => void;
 }
 
-export const PipelineFlow: React.FC<PipelineFlowProps> = ({ pipeline, sharedColors, envPipelineCount, showDeploymentDots, showLastDeployment }) => {
+export const PipelineFlow: React.FC<PipelineFlowProps> = ({ pipeline, sharedColors, envPipelineCount, showDeploymentDots, showLastDeployment, onViewHistory }) => {
     const hasNodes = pipeline.developmentEnvironment || pipeline.stages.length > 0;
 
     return (
         <div className="pipeline-card">
-            <h3 className="pipeline-card__name">{pipeline.name}</h3>
+            <div className="pipeline-card__header">
+                <h3 className="pipeline-card__name">{pipeline.name}</h3>
+                <button
+                    className="btn btn-secondary btn-sm pipeline-card__history-btn"
+                    onClick={() => onViewHistory(pipeline)}
+                    title="View full run history for this pipeline"
+                >
+                    📋 History
+                </button>
+            </div>
             <DeploymentHistory runs={pipeline.recentRuns} showDots={showDeploymentDots} showLastDeployment={showLastDeployment} />
             <div className="pipeline-flow">
                 {pipeline.developmentEnvironment && (

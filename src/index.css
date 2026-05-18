@@ -488,11 +488,24 @@ body {
     background: var(--surface-2);
 }
 
+.pipeline-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 8px;
+}
+
 .pipeline-card__name {
     color: var(--text-primary);
     font-size: 1rem;
     font-weight: 600;
-    margin-bottom: 14px;
+    margin-bottom: 0;
+}
+
+.pipeline-card__history-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .pipeline-flow {
@@ -1073,3 +1086,243 @@ body {
 .settings-toggle__switch--on .settings-toggle__thumb {
     left: 21px;
 }
+
+/* ─── Run History View ─────────────────────────────────────────────────────── */
+
+.run-history {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.run-history__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.run-history__title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.run-history__title-row h2 {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.run-history__pipeline-name {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.btn-back {
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.run-history__filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.run-history__filter-select,
+.run-history__filter-date {
+    font-size: 0.82rem;
+    padding: 5px 8px;
+    border: 1px solid var(--border-1);
+    border-radius: 6px;
+    background: var(--surface-1);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.run-history__filter-select:focus,
+.run-history__filter-date:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.run-history__date-range {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.run-history__date-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.run-history__count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+
+.run-history__table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--border-1);
+    border-radius: 8px;
+}
+
+.run-history__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    min-width: 900px;
+}
+
+.run-history__table thead tr {
+    background: var(--surface-3);
+    border-bottom: 1px solid var(--border-1);
+}
+
+.run-history__table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    user-select: none;
+}
+
+.run-history__table th.sortable {
+    cursor: pointer;
+}
+
+.run-history__table th.sortable:hover {
+    color: var(--text-primary);
+    background: var(--surface-4);
+}
+
+.run-history__table td {
+    padding: 9px 12px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-2);
+    vertical-align: middle;
+}
+
+.run-history__table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.run-history__table tbody tr:hover td {
+    background: var(--surface-3);
+}
+
+.run-history__artifact {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.run-history__datetime {
+    white-space: nowrap;
+    font-size: 0.79rem;
+    color: var(--text-muted);
+}
+
+.run-history__no-url {
+    color: var(--text-muted);
+}
+
+.sort-icon {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 0.75rem;
+}
+
+.sort-icon--inactive {
+    opacity: 0.4;
+}
+
+/* Run status badges */
+.run-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.run-status--succeeded {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.run-status--failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.run-status--cancelled {
+    background: #fef9c3;
+    color: #854d0e;
+}
+
+.run-status--in-progress {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.run-status--other {
+    background: var(--surface-4);
+    color: var(--text-muted);
+}
+
+.btn-open-dv {
+    font-size: 0.78rem;
+    padding: 3px 8px;
+    white-space: nowrap;
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: inherit;
+    text-decoration: underline;
+    padding: 0;
+}
+
+/* Dark mode overrides for run history */
+.dark .run-status--succeeded {
+    background: #14532d;
+    color: #bbf7d0;
+}
+
+.dark .run-status--failed {
+    background: #450a0a;
+    color: #fecaca;
+}
+
+.dark .run-status--cancelled {
+    background: #432100;
+    color: #fef08a;
+}
+
+.dark .run-status--in-progress {
+    background: #1e3a5f;
+    color: #93c5fd;
+}
+
+.dark .run-history__filter-select,
+.dark .run-history__filter-date {
+    background: var(--surface-2);
+    color: var(--text-primary);
+    border-color: var(--border-1);
+    color-scheme: dark;
+}
+

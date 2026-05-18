@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { PipelineVisualiser } from "./components/PipelineVisualiser";
+import { RunHistoryView } from "./components/RunHistoryView";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { useConnection, useToolboxEvents } from "./hooks/useToolboxAPI";
 import { useSettings } from "./hooks/useSettings";
+import { usePipelineData } from "./hooks/usePipelineData";
+import type { DeploymentPipeline } from "./types/pipeline";
 
 function App() {
     const { connection, refreshConnection } = useConnection();
     const { settings, updateSettings, isLoaded } = useSettings();
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [view, setView] = useState<'pipelines' | 'history'>('pipelines');
+    const [selectedPipeline, setSelectedPipeline] = useState<DeploymentPipeline | null>(null);
+
+    const { pipelines, stageMap, isLoading, error, refresh } = usePipelineData(connection);
 
     // Resolve the active theme: 'system' reads from PPTB, otherwise use the override
     useEffect(() => {
@@ -36,6 +43,16 @@ function App() {
 
     useToolboxEvents(handleEvent);
 
+    const handleViewHistory = useCallback((pipeline: DeploymentPipeline) => {
+        setSelectedPipeline(pipeline);
+        setView('history');
+    }, []);
+
+    const handleBackToPipelines = useCallback(() => {
+        setView('pipelines');
+        setSelectedPipeline(null);
+    }, []);
+
     return (
         <>
             <header className="header">
@@ -62,7 +79,24 @@ function App() {
                 />
             )}
 
-            <PipelineVisualiser connection={connection} settings={settings} />
+            {view === 'history' && selectedPipeline ? (
+                <RunHistoryView
+                    pipeline={selectedPipeline}
+                    stageMap={stageMap}
+                    connection={connection}
+                    onBack={handleBackToPipelines}
+                />
+            ) : (
+                <PipelineVisualiser
+                    connection={connection}
+                    pipelines={pipelines}
+                    isLoading={isLoading}
+                    error={error}
+                    refresh={refresh}
+                    settings={settings}
+                    onViewHistory={handleViewHistory}
+                />
+            )}
         </>
     );
 }

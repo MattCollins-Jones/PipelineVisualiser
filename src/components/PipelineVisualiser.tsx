@@ -1,8 +1,8 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import html2canvas from 'html2canvas';
-import { usePipelineData } from '../hooks/usePipelineData';
 import { PipelineFlow } from './PipelineFlow';
 import { AppSettings } from '../types/settings';
+import type { DeploymentPipeline } from '../types/pipeline';
 
 // Golden angle (~137.5°) spacing gives maximum perceptual separation
 // between consecutive colours — works for any number of environments.
@@ -13,11 +13,15 @@ function getSharedEnvColor(index: number): string {
 
 interface PipelineVisualiserProps {
     connection: ToolBoxAPI.DataverseConnection | null;
+    pipelines: DeploymentPipeline[];
+    isLoading: boolean;
+    error: string | null;
+    refresh: () => void;
     settings: AppSettings;
+    onViewHistory: (pipeline: DeploymentPipeline) => void;
 }
 
-export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connection, settings }) => {
-    const { pipelines, isLoading, error, refresh } = usePipelineData(connection);
+export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connection, pipelines, isLoading, error, refresh, settings, onViewHistory }) => {
     const exportRef = useRef<HTMLDivElement>(null);
     const [isExporting, setIsExporting] = useState(false);
 
@@ -168,6 +172,7 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
                         envPipelineCount={envPipelineCount}
                         showDeploymentDots={settings.showDeploymentDots}
                         showLastDeployment={settings.showLastDeployment}
+                        onViewHistory={onViewHistory}
                     />
                 ))}
             </div>
