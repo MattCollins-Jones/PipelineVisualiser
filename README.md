@@ -4,6 +4,11 @@ A Power Platform ToolBox tool that visualises deployment pipelines across enviro
 
 ## What's New
 
+### v1.2.0
+- 📋 **Run history screen** — click the History button on any pipeline to view its full deployment run history with filtering by status, target environment and date range, and sorting by any column
+- 🔗 **Open in Dataverse** — each run history row has a direct link to open the stage run record in the Dataverse web browser
+- 🖼️ **Export fixes** — resolved PNG export clipping and white-bar artefacts when the side panel is expanded or pipelines extend beyond the visible area
+
 ### v1.1.5
 - 👤 **Delegated deployment indicators** — pipeline stages configured for delegated deployments now show a visual badge:
   - 👤 **Delegated: User** — stage is delegated to the Stage Owner
@@ -45,6 +50,13 @@ A Power Platform ToolBox tool that visualises deployment pipelines across enviro
 - Hover tooltips on each environment node and deployment dot showing contextual details
 - Automatically refreshes when the active connection changes
 
+### Delegated Deployments
+
+- Pipelines and stages configured for delegated deployments display an icon:
+  - 👤 Delegate to a user
+  - 🤖 Delegate to a Service Principal (SPN)
+- Icons are included in the legend at the top
+
 ### Settings
 
 Click ⚙️ in the header to open the settings panel:
@@ -69,14 +81,30 @@ Settings are saved via the PPTB Settings API and persist between sessions.
 - Hover a dot to see full details: status, artifact name, and date
 - Orphaned stage runs (not linked to a deployment stage) are automatically excluded
 
+### Run History Screen
+
+- Click the **📋 History** button on any pipeline card to open its full run history
+- Filter by **status**, **target environment**, and **date range**
+- Sort by any column: stage, environment, artifact, version, owner, status, start time, end time, duration
+- Each row has a **🔗 Open** button to open the stage run record directly in the Dataverse web browser
+- Back button returns to the pipeline overview
+
+### Settings
+
+- ⚙️ **Settings panel** accessible from the header
+- **Theme** — choose to follow the system theme automatically, or override to always use light or dark mode
+- **Export options** — control what is included in exported PNGs:
+  - Show/hide the heading and legend
+  - Show/hide the last deployed label and deployment history dots
+
 ### Export
 
 - **Export PNG** button captures a snapshot of all pipeline cards and saves it as `pipelines-YYYY-MM-DD.png` — useful for storing in GitHub, Confluence, ADO, or other knowledge hubs
-- Export respects display settings — hidden sections are excluded from the snapshot
+- Export respects the current settings for heading/legend and deployment history visibility
 
 ### Legend
 
-- Collapsible legend at the top explains the dot colour key and highlights any shared environments
+- Collapsible legend at the top explains the dot colour key, delegated deployment icons, and highlights any shared environments
 - Can be collapsed to maximise usable screen area, or hidden entirely via Settings
 
 ## Structure
@@ -85,10 +113,12 @@ Settings are saved via the PPTB Settings API and persist between sessions.
 src/
 ├── components/
 │   ├── PipelineFlow.tsx        # Renders a single pipeline as a horizontal flow
-│   ├── PipelineVisualiser.tsx  # Top-level component with loading/error states
+│   ├── PipelineVisualiser.tsx  # Top-level component with loading/error states and export
+│   ├── RunHistoryView.tsx      # Full run history screen with filtering and sorting
 │   └── SettingsPanel.tsx       # Slide-out settings panel
 ├── hooks/
 │   ├── usePipelineData.ts      # Dataverse queries and data processing
+│   ├── useRunHistory.ts        # Fetches all stage runs for a given pipeline
 │   ├── useSettings.ts          # Settings persistence via PPTB Settings API
 │   └── useToolboxAPI.ts        # Connection and event hooks
 ├── types/
