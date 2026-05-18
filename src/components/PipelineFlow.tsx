@@ -188,6 +188,7 @@ interface EnvironmentNodeProps {
     isDevelopment?: boolean;
     sharedColor?: string;
     pipelineCount?: number;
+    delegationType?: 'none' | 'user' | 'spn';
 }
 
 const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
@@ -196,6 +197,7 @@ const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
     isDevelopment,
     sharedColor,
     pipelineCount = 1,
+    delegationType = 'none',
 }) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
@@ -227,6 +229,16 @@ const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
                 <span className={`pipeline-node__badge ${isDevelopment ? 'badge--dev' : 'badge--target'}`}>
                     {isDevelopment ? 'Development' : 'Target'}
                 </span>
+                {delegationType === 'user' && (
+                    <span className="pipeline-node__delegation-badge pipeline-node__delegation-badge--user" title="Delegated deployment (Stage Owner)">
+                        👤 Delegated: User
+                    </span>
+                )}
+                {delegationType === 'spn' && (
+                    <span className="pipeline-node__delegation-badge pipeline-node__delegation-badge--spn" title="Delegated deployment (Service Principal)">
+                        🤖 Delegated: SPN
+                    </span>
+                )}
             </div>
 
             {tooltip && createPortal(
@@ -278,6 +290,7 @@ export const PipelineFlow: React.FC<PipelineFlowProps> = ({ pipeline, sharedColo
                             stageName={stage.name}
                             sharedColor={stage.environment ? sharedColors.get(stage.environment.id) : undefined}
                             pipelineCount={stage.environment ? envPipelineCount.get(stage.environment.id) : undefined}
+                            delegationType={stage.delegationType}
                         />
                         {index < pipeline.stages.length - 1 && (
                             <div className="pipeline-arrow" aria-hidden="true">→</div>

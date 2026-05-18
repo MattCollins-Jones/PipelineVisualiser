@@ -12,6 +12,8 @@ export interface DeploymentStage {
     pipelineId: string;
     environment: DeploymentEnvironment | null;
     previousStageId: string | null;
+    /** Delegated deployment type for this stage */
+    delegationType: 'none' | 'user' | 'spn';
     rawAttributes: Record<string, any>;
 }
 

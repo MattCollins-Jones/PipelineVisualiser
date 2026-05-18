@@ -143,6 +143,15 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
                                 <strong>🔗 Shared environments</strong> — matching coloured borders indicate the same environment appears across multiple pipelines.
                             </div>
                         )}
+                        <div className="pipeline-legend__row">
+                            <span className="pipeline-legend__label">Delegated deployments:</span>
+                            <div className="pipeline-legend__dots-row">
+                                <span className="pipeline-legend__delegation-icon">👤</span>
+                                <span className="pipeline-legend__item">Delegated – Stage Owner (User)</span>
+                                <span className="pipeline-legend__delegation-icon">🤖</span>
+                                <span className="pipeline-legend__item">Delegated – Service Principal (SPN)</span>
+                            </div>
+                        </div>
                     </div>
                 </details>
                 )}

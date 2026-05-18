@@ -204,12 +204,18 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                     new Set([...usedKeys, id])
                 );
 
+                const isDelegated = raw.isdelegateddeployment === true;
+                const delegationType: DeploymentStage['delegationType'] = isDelegated
+                    ? (raw.delegateddeploymenttype === 2 ? 'spn' : 'user')
+                    : 'none';
+
                 const stage: DeploymentStage = {
                     id,
                     name: raw.name ?? raw.stagename ?? `Stage ${stageMap.size + 1}`,
                     pipelineId: pipelineMatch?.value ?? '',
                     environment: envMatch ? (envMap.get(envMatch.value) ?? null) : null,
                     previousStageId: prevMatch?.value ?? null,
+                    delegationType,
                     rawAttributes: raw,
                 };
 
