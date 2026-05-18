@@ -7,13 +7,31 @@ A Power Platform ToolBox tool that visualises deployment pipelines across enviro
 ### v1.2.0
 - 📋 **Run history screen** — click the History button on any pipeline to view its full deployment run history with filtering by status, target environment and date range, and sorting by any column
 - 🔗 **Open in Dataverse** — each run history row has a direct link to open the stage run record in the Dataverse web browser
-- ⚙️ **Settings panel** — configure theme (follow system or override) and export options from a dedicated settings menu
-- 🎨 **Export options** — choose whether to include the heading/legend and/or the deployment history dots and last-deployed label in exported PNGs
-- 👤🤖 **Delegated deployment icons** — pipelines/stages configured for delegated deployments now show a 👤 icon (delegate to user) or 🤖 icon (delegate to SPN), also shown in the legend
 - 🖼️ **Export fixes** — resolved PNG export clipping and white-bar artefacts when the side panel is expanded or pipelines extend beyond the visible area
 
+### v1.1.5
+- 👤 **Delegated deployment indicators** — pipeline stages configured for delegated deployments now show a visual badge:
+  - 👤 **Delegated: User** — stage is delegated to the Stage Owner
+  - 🤖 **Delegated: SPN** — stage is delegated to a Service Principal
+- 🗝️ **Updated legend** — the legend now includes entries for both delegation types
+
+### v1.1.4
+- ⚙️ **Settings panel** — click the ⚙️ button in the header to open a slide-out settings panel
+- 🎨 **Theme control** — choose between *Follow toolbox theme* (default), *Light*, or *Dark*; the tool always respects the Power Platform ToolBox app theme by default, with the option to override per-tool
+- 👁️ **Display toggles** — individually show or hide:
+  - Legend & notes
+  - Deployment history dots (last 5 runs per stage)
+  - Last deployed solution summary (artifact name, status, date)
+- 💾 **Persistent settings** — all preferences are saved via the PPTB Settings API and restored on next launch
+
+### v1.1.2
+- 🖥️ **Toolbox theme sync** — the tool reads the Power Platform ToolBox app theme on startup and applies it automatically
+
+### v1.1.1
+- 🔧 **Package fix** — resolved a packaging issue that affected installation
+
 ### v1.1.0
-- 🌙 **Dark mode** — toggle between light and dark themes using the 🌙/☀️ button in the header; preference is saved across sessions
+- 🌙 **Dark mode** — full dark theme support across all UI elements
 - 💬 **Smarter error handling** — if the Deployment Pipeline Configuration app is not installed, a helpful setup message is shown instead of a raw API error
 - 📄 **MIT licence** — updated with correct year and author name
 
@@ -38,6 +56,19 @@ A Power Platform ToolBox tool that visualises deployment pipelines across enviro
   - 👤 Delegate to a user
   - 🤖 Delegate to a Service Principal (SPN)
 - Icons are included in the legend at the top
+
+### Settings
+
+Click ⚙️ in the header to open the settings panel:
+
+| Setting | Options | Default |
+|---|---|---|
+| Theme | Follow toolbox theme / Light / Dark | Follow toolbox theme |
+| Show legend | On / Off | On |
+| Show deployment history dots | On / Off | On |
+| Show last deployed solution | On / Off | On |
+
+Settings are saved via the PPTB Settings API and persist between sessions.
 
 ### Deployment History
 
@@ -74,7 +105,7 @@ A Power Platform ToolBox tool that visualises deployment pipelines across enviro
 ### Legend
 
 - Collapsible legend at the top explains the dot colour key, delegated deployment icons, and highlights any shared environments
-- Can be collapsed to maximise usable screen area
+- Can be collapsed to maximise usable screen area, or hidden entirely via Settings
 
 ## Structure
 
@@ -84,13 +115,15 @@ src/
 │   ├── PipelineFlow.tsx        # Renders a single pipeline as a horizontal flow
 │   ├── PipelineVisualiser.tsx  # Top-level component with loading/error states and export
 │   ├── RunHistoryView.tsx      # Full run history screen with filtering and sorting
-│   └── SettingsPanel.tsx       # Settings panel (theme and export options)
+│   └── SettingsPanel.tsx       # Slide-out settings panel
 ├── hooks/
 │   ├── usePipelineData.ts      # Dataverse queries and data processing
 │   ├── useRunHistory.ts        # Fetches all stage runs for a given pipeline
+│   ├── useSettings.ts          # Settings persistence via PPTB Settings API
 │   └── useToolboxAPI.ts        # Connection and event hooks
 ├── types/
-│   └── pipeline.ts             # TypeScript interfaces
+│   ├── pipeline.ts             # TypeScript interfaces for pipeline data
+│   └── settings.ts             # AppSettings interface and defaults
 ├── App.tsx
 ├── index.css
 └── main.tsx

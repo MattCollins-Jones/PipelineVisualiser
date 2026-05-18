@@ -129,6 +129,7 @@ async function fetchPipelinesWithDevEnv(): Promise<Record<string, any>[]> {
 
 export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | null) {
     const [pipelines, setPipelines] = useState<DeploymentPipeline[]>([]);
+    const [stageMap, setStageMap] = useState<Map<string, DeploymentStage>>(new Map());
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -204,12 +205,18 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                     new Set([...usedKeys, id])
                 );
 
+                const isDelegated = raw.isdelegateddeployment === true;
+                const delegationType: DeploymentStage['delegationType'] = isDelegated
+                    ? (raw.delegateddeploymenttype === 2 ? 'spn' : 'user')
+                    : 'none';
+
                 const stage: DeploymentStage = {
                     id,
                     name: raw.name ?? raw.stagename ?? `Stage ${stageMap.size + 1}`,
                     pipelineId: pipelineMatch?.value ?? '',
                     environment: envMatch ? (envMap.get(envMatch.value) ?? null) : null,
                     previousStageId: prevMatch?.value ?? null,
+                    delegationType,
                     rawAttributes: raw,
                 };
 
@@ -234,10 +241,10 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                     if (v === id) usedKeys.add(k);
                 }
 
-                // Find the stage this run belongs to via GUID matching
                 const stageMatch = findFirstGuidMatch(raw, stageIds, usedKeys);
                 const stageId = stageMatch?.value ?? null;
-                const pipelineId = stageId ? (stageMap.get(stageId)?.pipelineId ?? null) : null;
+                const stage = stageId ? stageMap.get(stageId) : undefined;
+                const pipelineId = stage?.pipelineId ?? null;
                 if (!pipelineId) continue;
 
                 const existing = runsByPipeline.get(pipelineId) ?? [];
@@ -246,10 +253,22 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                 existing.push({
                     id,
                     stageId,
+                    stageName: stage?.name ?? null,
                     pipelineId,
+                    targetEnvironmentId: stage?.environment?.id ?? null,
+                    targetEnvironmentName: stage?.environment?.name ?? null,
+                    owner: raw['_ownerid_value@OData.Community.Display.V1.FormattedValue']
+                        ?? raw['ownerid@OData.Community.Display.V1.FormattedValue']
+                        ?? raw.owneridname
+                        ?? null,
                     status: raw.stagerunstatus ?? null,
                     artifactName: raw.artifactname ?? null,
-                    solutionVersion: raw.solutionartifactversion ?? null,
+                    solutionVersion: raw.solutionartifactversion
+                        ?? raw.solutionversion
+                        ?? raw.artifactversion
+                        ?? raw.msdyn_solutionartifactversion
+                        ?? raw.msdyn_solutionversion
+                        ?? null,
                     startTime: raw.startedon ?? raw.createdon ?? null,
                     endTime: raw.completedon ?? raw.modifiedon ?? null,
                     rawAttributes: raw,
@@ -291,6 +310,7 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
             }
 
             setPipelines(result);
+            setStageMap(stageMap);
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             // 0x80060888 = "Resource not found for the segment" — the deployment pipeline
@@ -311,9 +331,10 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
             loadData();
         } else {
             setPipelines([]);
+            setStageMap(new Map());
             setError(null);
         }
     }, [connection, loadData]);
 
-    return { pipelines, isLoading, error, refresh: loadData };
+    return { pipelines, stageMap, isLoading, error, refresh: loadData };
 }

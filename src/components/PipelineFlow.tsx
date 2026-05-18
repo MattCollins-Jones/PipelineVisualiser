@@ -95,9 +95,11 @@ function formatRunDate(isoString: string | null): string {
 
 interface DeploymentHistoryProps {
     runs: DeploymentStageRun[];
+    showDots: boolean;
+    showLastDeployment: boolean;
 }
 
-const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
+const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs, showDots, showLastDeployment }) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
     const buildDotTooltip = useCallback((run: DeploymentStageRun): string => {
@@ -122,7 +124,7 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
 
     const handleDotLeave = useCallback(() => setTooltip(null), []);
 
-    if (runs.length === 0) return null;
+    if (runs.length === 0 || (!showDots && !showLastDeployment)) return null;
 
     const lastRun = runs[0];
     const statusTextColor = getRunStatusTextColor(lastRun.status);
@@ -131,34 +133,40 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({ runs }) => {
     return (
         <>
             <div className="deployment-history">
-                <div className="deployment-dots">
-                    {runs.map(run => (
-                        <button
-                            key={run.id}
-                            type="button"
-                            className="deployment-dot"
-                            style={{ background: getRunStatusColor(run.status) }}
-                            aria-label={buildDotTooltip(run)}
-                            onMouseEnter={e => handleDotEnter(run, e)}
-                            onMouseLeave={e => { if (e.currentTarget !== document.activeElement) handleDotLeave(); }}
-                            onFocus={e => handleDotFocus(run, e)}
-                            onBlur={handleDotLeave}
-                        />
-                    ))}
-                </div>
-                <span className="deployment-history__divider" aria-hidden="true" />
-                <div className="deployment-summary">
-                    {lastRun.artifactName && (
-                        <span className="deployment-summary__artifact">
-                            {lastRun.artifactName}
-                            {lastRun.solutionVersion && ` v${lastRun.solutionVersion}`}
+                {showDots && (
+                    <div className="deployment-dots">
+                        {runs.map(run => (
+                            <button
+                                key={run.id}
+                                type="button"
+                                className="deployment-dot"
+                                style={{ background: getRunStatusColor(run.status) }}
+                                aria-label={buildDotTooltip(run)}
+                                onMouseEnter={e => handleDotEnter(run, e)}
+                                onMouseLeave={e => { if (e.currentTarget !== document.activeElement) handleDotLeave(); }}
+                                onFocus={e => handleDotFocus(run, e)}
+                                onBlur={handleDotLeave}
+                            />
+                        ))}
+                    </div>
+                )}
+                {showDots && showLastDeployment && (
+                    <span className="deployment-history__divider" aria-hidden="true" />
+                )}
+                {showLastDeployment && (
+                    <div className="deployment-summary">
+                        {lastRun.artifactName && (
+                            <span className="deployment-summary__artifact">
+                                {lastRun.artifactName}
+                                {lastRun.solutionVersion && ` v${lastRun.solutionVersion}`}
+                            </span>
+                        )}
+                        <span className="deployment-summary__status" style={{ color: statusTextColor }}>
+                            {getRunStatusLabel(lastRun.status)}
                         </span>
-                    )}
-                    <span className="deployment-summary__status" style={{ color: statusTextColor }}>
-                        {getRunStatusLabel(lastRun.status)}
-                    </span>
-                    {dateStr && <span className="deployment-summary__date">{dateStr}</span>}
-                </div>
+                        {dateStr && <span className="deployment-summary__date">{dateStr}</span>}
+                    </div>
+                )}
             </div>
 
             {tooltip && createPortal(
@@ -180,6 +188,7 @@ interface EnvironmentNodeProps {
     isDevelopment?: boolean;
     sharedColor?: string;
     pipelineCount?: number;
+    delegationType?: 'none' | 'user' | 'spn';
 }
 
 const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
@@ -188,6 +197,7 @@ const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
     isDevelopment,
     sharedColor,
     pipelineCount = 1,
+    delegationType = 'none',
 }) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
@@ -219,6 +229,19 @@ const EnvironmentNode: React.FC<EnvironmentNodeProps> = ({
                 <span className={`pipeline-node__badge ${isDevelopment ? 'badge--dev' : 'badge--target'}`}>
                     {isDevelopment ? 'Development' : 'Target'}
                 </span>
+                {delegationType === 'user' && (
+                    <span className="pipeline-node__delegation-badge pipeline-node__delegation-badge--user" title="Delegated deployment (Stage Owner)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                        </svg>
+                        Delegated: User
+                    </span>
+                )}
+                {delegationType === 'spn' && (
+                    <span className="pipeline-node__delegation-badge pipeline-node__delegation-badge--spn" title="Delegated deployment (Service Principal)">
+                        🤖 Delegated: SPN
+                    </span>
+                )}
             </div>
 
             {tooltip && createPortal(
@@ -235,15 +258,27 @@ interface PipelineFlowProps {
     pipeline: DeploymentPipeline;
     sharedColors: Map<string, string>;
     envPipelineCount: Map<string, number>;
+    showDeploymentDots: boolean;
+    showLastDeployment: boolean;
+    onViewHistory: (pipeline: DeploymentPipeline) => void;
 }
 
-export const PipelineFlow: React.FC<PipelineFlowProps> = ({ pipeline, sharedColors, envPipelineCount }) => {
+export const PipelineFlow: React.FC<PipelineFlowProps> = ({ pipeline, sharedColors, envPipelineCount, showDeploymentDots, showLastDeployment, onViewHistory }) => {
     const hasNodes = pipeline.developmentEnvironment || pipeline.stages.length > 0;
 
     return (
         <div className="pipeline-card">
-            <h3 className="pipeline-card__name">{pipeline.name}</h3>
-            <DeploymentHistory runs={pipeline.recentRuns} />
+            <div className="pipeline-card__header">
+                <h3 className="pipeline-card__name">{pipeline.name}</h3>
+                <button
+                    className="btn btn-secondary btn-sm pipeline-card__history-btn"
+                    onClick={() => onViewHistory(pipeline)}
+                    title="View full run history for this pipeline"
+                >
+                    📋 History
+                </button>
+            </div>
+            <DeploymentHistory runs={pipeline.recentRuns} showDots={showDeploymentDots} showLastDeployment={showLastDeployment} />
             <div className="pipeline-flow">
                 {pipeline.developmentEnvironment && (
                     <>
@@ -268,6 +303,7 @@ export const PipelineFlow: React.FC<PipelineFlowProps> = ({ pipeline, sharedColo
                             stageName={stage.name}
                             sharedColor={stage.environment ? sharedColors.get(stage.environment.id) : undefined}
                             pipelineCount={stage.environment ? envPipelineCount.get(stage.environment.id) : undefined}
+                            delegationType={stage.delegationType}
                         />
                         {index < pipeline.stages.length - 1 && (
                             <div className="pipeline-arrow" aria-hidden="true">→</div>

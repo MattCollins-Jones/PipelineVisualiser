@@ -12,13 +12,19 @@ export interface DeploymentStage {
     pipelineId: string;
     environment: DeploymentEnvironment | null;
     previousStageId: string | null;
+    /** Delegated deployment type for this stage */
+    delegationType: 'none' | 'user' | 'spn';
     rawAttributes: Record<string, any>;
 }
 
 export interface DeploymentStageRun {
     id: string;
     stageId: string | null;
+    stageName: string | null;
     pipelineId: string | null;
+    targetEnvironmentId: string | null;
+    targetEnvironmentName: string | null;
+    owner: string | null;
     /** stagerunstatus option set value */
     status: number | null;
     artifactName: string | null;
