@@ -257,12 +257,18 @@ export function usePipelineData(connection: ToolBoxAPI.DataverseConnection | nul
                     pipelineId,
                     targetEnvironmentId: stage?.environment?.id ?? null,
                     targetEnvironmentName: stage?.environment?.name ?? null,
-                    owner: raw['ownerid@OData.Community.Display.V1.FormattedValue']
+                    owner: raw['_ownerid_value@OData.Community.Display.V1.FormattedValue']
+                        ?? raw['ownerid@OData.Community.Display.V1.FormattedValue']
                         ?? raw.owneridname
                         ?? null,
                     status: raw.stagerunstatus ?? null,
                     artifactName: raw.artifactname ?? null,
-                    solutionVersion: raw.solutionartifactversion ?? null,
+                    solutionVersion: raw.solutionartifactversion
+                        ?? raw.solutionversion
+                        ?? raw.artifactversion
+                        ?? raw.msdyn_solutionartifactversion
+                        ?? raw.msdyn_solutionversion
+                        ?? null,
                     startTime: raw.startedon ?? raw.createdon ?? null,
                     endTime: raw.completedon ?? raw.modifiedon ?? null,
                     rawAttributes: raw,

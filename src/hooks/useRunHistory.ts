@@ -71,12 +71,18 @@ async function fetchAllRunsForPipeline(
             pipelineId,
             targetEnvironmentId: stage?.environment?.id ?? null,
             targetEnvironmentName: stage?.environment?.name ?? null,
-            owner: record['ownerid@OData.Community.Display.V1.FormattedValue']
+            owner: record['_ownerid_value@OData.Community.Display.V1.FormattedValue']
+                ?? record['ownerid@OData.Community.Display.V1.FormattedValue']
                 ?? record.owneridname
                 ?? null,
             status: record.stagerunstatus ?? null,
             artifactName: record.artifactname ?? null,
-            solutionVersion: record.solutionartifactversion ?? null,
+            solutionVersion: record.solutionartifactversion
+                ?? record.solutionversion
+                ?? record.artifactversion
+                ?? record.msdyn_solutionartifactversion
+                ?? record.msdyn_solutionversion
+                ?? null,
             startTime: record.startedon ?? record.createdon ?? null,
             endTime: record.completedon ?? record.modifiedon ?? null,
             rawAttributes: record,

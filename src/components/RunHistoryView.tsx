@@ -95,6 +95,15 @@ interface RunHistoryViewProps {
 export const RunHistoryView: React.FC<RunHistoryViewProps> = ({ pipeline, stageMap, connection, onBack }) => {
     const { runs, isLoading, error, refresh } = useRunHistory(pipeline.id, stageMap);
 
+    // Log raw field names on first load so we can diagnose blank fields
+    React.useEffect(() => {
+        if (runs.length > 0) {
+            const keys = Object.keys(runs[0].rawAttributes);
+            console.debug('[RunHistoryView] rawAttributes keys:', keys);
+            console.debug('[RunHistoryView] sample record:', runs[0].rawAttributes);
+        }
+    }, [runs]);
+
     // Filter state
     const [filterStatus, setFilterStatus] = useState<string>('');
     const [filterEnv, setFilterEnv] = useState<string>('');
