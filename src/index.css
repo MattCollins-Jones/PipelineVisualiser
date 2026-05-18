@@ -635,8 +635,24 @@ body {
 }
 
 .pipeline-legend__delegation-icon {
-    font-size: 1rem;
-    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+
+.pipeline-legend__delegation-icon--user {
+    color: #0369a1;
+}
+
+.pipeline-legend__delegation-icon--spn {
+    color: #92400e;
+}
+
+:root.dark .pipeline-legend__delegation-icon--user {
+    color: #ffffff;
+}
+
+:root.dark .pipeline-legend__delegation-icon--spn {
+    color: #fcd34d;
 }
 
 .shared-legend {

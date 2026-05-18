@@ -146,9 +146,17 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
                         <div className="pipeline-legend__row">
                             <span className="pipeline-legend__label">Delegated deployments:</span>
                             <div className="pipeline-legend__dots-row">
-                                <span className="pipeline-legend__delegation-icon">👤</span>
+                                <span className="pipeline-legend__delegation-icon pipeline-legend__delegation-icon--user">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                                    </svg>
+                                </span>
                                 <span className="pipeline-legend__item">Delegated – Stage Owner (User)</span>
-                                <span className="pipeline-legend__delegation-icon">🤖</span>
+                                <span className="pipeline-legend__delegation-icon pipeline-legend__delegation-icon--spn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.1 0-2 .9-2 2v5c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-5c0-1.1-.9-2-2-2zm-9 7l-2-2 1.41-1.41L11 13.17l3.59-3.58L16 11l-5 5zm1-9c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
+                                    </svg>
+                                </span>
                                 <span className="pipeline-legend__item">Delegated – Service Principal (SPN)</span>
                             </div>
                         </div>
