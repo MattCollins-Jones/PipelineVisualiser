@@ -4,6 +4,9 @@ A Power Platform ToolBox tool that visualises deployment pipelines across enviro
 
 ## What's New
 
+### v1.2.1
+- 🔧 **Packaging fix** — corrects a packaging issue in v1.2.0 where the published bundle was missing features from v1.1.1–v1.1.5 (run history screen, settings panel, delegated deployment icons, export improvements)
+
 ### v1.2.0
 - 📋 **Run history screen** — click the History button on any pipeline to view its full deployment run history with filtering by status, target environment and date range, and sorting by any column
 - 🔗 **Open in Dataverse** — each run history row has a direct link to open the stage run record in the Dataverse web browser
