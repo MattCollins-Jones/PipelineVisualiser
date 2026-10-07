@@ -142,6 +142,10 @@ src/
 | `deploymentpipeline_deploymentenvironment` | N:N intersect — links pipelines to their dev environment |
 | `deploymentstagerun` | Deployment Stage Run records — status, artifact, version, start/end times |
 
+## AI Assistance
+
+Parts of this tool were generated with GitHub Copilot and reviewed, tested, and maintained by the contributors listed in `package.json`.
+
 ## License
 
 MIT
