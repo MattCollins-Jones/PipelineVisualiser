@@ -1,8 +1,8 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import html2canvas from 'html2canvas';
-import { usePipelineData } from '../hooks/usePipelineData';
 import { PipelineFlow } from './PipelineFlow';
 import { AppSettings } from '../types/settings';
+import type { DeploymentPipeline } from '../types/pipeline';
 
 // Golden angle (~137.5°) spacing gives maximum perceptual separation
 // between consecutive colours — works for any number of environments.
@@ -13,11 +13,15 @@ function getSharedEnvColor(index: number): string {
 
 interface PipelineVisualiserProps {
     connection: ToolBoxAPI.DataverseConnection | null;
+    pipelines: DeploymentPipeline[];
+    isLoading: boolean;
+    error: string | null;
+    refresh: () => void;
     settings: AppSettings;
+    onViewHistory: (pipeline: DeploymentPipeline) => void;
 }
 
-export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connection, settings }) => {
-    const { pipelines, isLoading, error, refresh } = usePipelineData(connection);
+export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connection, pipelines, isLoading, error, refresh, settings, onViewHistory }) => {
     const exportRef = useRef<HTMLDivElement>(null);
     const [isExporting, setIsExporting] = useState(false);
 
@@ -25,12 +29,80 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
         if (!exportRef.current) return;
         setIsExporting(true);
         try {
-            const canvas = await html2canvas(exportRef.current, {
-                backgroundColor: '#f3f4f6',
-                scale: 2, // 2× for sharper output on high-DPI screens
-                useCORS: true,
-                logging: false,
-            });
+            const source = exportRef.current;
+
+            type SavedStyle = { el: HTMLElement; overflow: string; overflowX: string; width: string; minWidth: string; maxWidth: string };
+            const saved: SavedStyle[] = [];
+
+            const saveAndExpand = (el: HTMLElement) => {
+                saved.push({
+                    el,
+                    overflow: el.style.overflow,
+                    overflowX: el.style.overflowX,
+                    width: el.style.width,
+                    minWidth: el.style.minWidth,
+                    maxWidth: el.style.maxWidth,
+                });
+                el.style.overflow = 'visible';
+                el.style.overflowX = 'visible';
+                el.style.width = el.scrollWidth + 'px';
+                el.style.minWidth = 'unset';
+                el.style.maxWidth = 'none';
+            };
+
+            // Expand all overflow-clipped descendants so their content isn't cut off
+            for (const el of Array.from(source.querySelectorAll<HTMLElement>('*'))) {
+                const cs = window.getComputedStyle(el);
+                if (cs.overflowX === 'auto' || cs.overflowX === 'hidden' ||
+                    cs.overflow === 'auto' || cs.overflow === 'hidden') {
+                    saveAndExpand(el);
+                }
+            }
+
+            // Always expand the source element itself so its background covers full width
+            saveAndExpand(source);
+
+            // Also expand parent containers so their backgrounds fill the full capture area
+            let ancestor = source.parentElement;
+            while (ancestor && ancestor !== document.body) {
+                saveAndExpand(ancestor);
+                ancestor = ancestor.parentElement;
+            }
+
+            // Let the browser reflow before measuring final dimensions
+            await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
+            const captureWidth = source.scrollWidth;
+            const captureHeight = source.scrollHeight;
+
+            // Determine background colour from the source element (respects dark mode)
+            const sourceBg = window.getComputedStyle(source).backgroundColor;
+
+            let canvas: HTMLCanvasElement;
+            try {
+                canvas = await html2canvas(source, {
+                    backgroundColor: sourceBg || '#f3f4f6',
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    width: captureWidth,
+                    height: captureHeight,
+                    windowWidth: captureWidth,
+                    windowHeight: captureHeight,
+                    scrollX: 0,
+                    scrollY: 0,
+                });
+            } finally {
+                // Always restore styles, even if html2canvas throws
+                for (const s of saved) {
+                    s.el.style.overflow = s.overflow;
+                    s.el.style.overflowX = s.overflowX;
+                    s.el.style.width = s.width;
+                    s.el.style.minWidth = s.minWidth;
+                    s.el.style.maxWidth = s.maxWidth;
+                }
+            }
+
             const link = document.createElement('a');
             link.download = `pipelines-${new Date().toISOString().slice(0, 10)}.png`;
             link.href = canvas.toDataURL('image/png');
@@ -168,6 +240,7 @@ export const PipelineVisualiser: React.FC<PipelineVisualiserProps> = ({ connecti
                         envPipelineCount={envPipelineCount}
                         showDeploymentDots={settings.showDeploymentDots}
                         showLastDeployment={settings.showLastDeployment}
+                        onViewHistory={onViewHistory}
                     />
                 ))}
             </div>
